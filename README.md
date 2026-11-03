@@ -1,21 +1,85 @@
 # Truckie
 
-Truckie is a delivery route optimizer for pickups and deliveries. It plans the best order of stops so drivers spend less time and fuel on the road.
+Android companion app for Google Maps for delivery drivers. Truckie holds the day's stops, puts
+them in a good order, and hands Google Maps (or Waze) one stop at a time. Google Maps only drives;
+Truckie decides where to go next. That stops Google Maps inserting new stops mid-route and gets
+around Waze's stop limit.
 
-## What it does (planned)
+## What works in v0.1
 
-- Takes a list of pickup and delivery jobs.
-- Builds an optimized route that respects pickup-before-delivery order.
-- Shows the route to the driver, stop by stop.
+- **Add stops** by typing an address, `lat,lng`, or pasting a Google Maps link. New stops always
+  go on the **end** of the list, in the order you add them. Tick **Pickup** for a pickup.
+- **Optimize** (top bar) re-orders only the stops still to do, from your current position
+  (or from the current next stop if location is off). Never automatic.
+- **Driving loop, one tap per stop:**
+  1. The next stop shows in large type with a big **Delivery completed?** button (**Picked up?** for pickups).
+  2. Tap it: the stop is struck out into **Done** (tap **Restore** to undo a misclick).
+  3. **Navigate to next stop?** counts down 5 seconds. No tap = Yes: Google Maps or Waze opens
+     already navigating. **No** keeps you in Truckie.
+- **Tap any stop** to navigate there, make it next, move it, switch pickup/delivery, or remove it.
+- **Menu (⋮):** Google Maps or Waze, check for updates, clear all stops.
+- **Update check** on launch against this repo's latest GitHub Release: **Update now / Later**.
+
+Not in v0.1: QR scanning from the work PDA (next build), delivery-platform imports, pickup-before-delivery linking.
 
 ## Long-term goal
 
 Auto-import jobs (for example from email, spreadsheets, or dispatch systems) so routes build themselves without manual entry.
+QR scanning from the work PDA comes first.
 
-## Status
+## How routing works
 
-Early stage. The design doc will be added to `docs/` when ready.
+1. Truckie asks for a drive-time grid between your position and every stop still to do, from the
+   OSRM public server (no key). With no signal, it uses straight-line estimates instead.
+2. The phone solves the order: exactly for up to 12 stops (Held-Karp), and for more stops with
+   cheapest insertion, nearest neighbour and shuffled starts, each polished with 2-opt and or-opt.
+   One-way travel times are respected. 30 stops take well under a second.
+3. The list updates. Google Maps only ever sees one destination at a time.
 
-## Visibility
+The OSRM public server is for testing. Swapping it for Google's Routes API (traffic-aware, needs a
+key and billing) is a change to `Osrm.kt` and `MainViewModel.optimize()` only.
 
-This repository is private while the product is unreleased. It can be made public later.
+## Install
+
+- Newest build of main: https://github.com/FaradayMicrosystems/truckie/releases/download/latest/truckie-debug.apk
+- Versioned releases are on the Releases page as `truckie-vX.Y.apk`.
+
+Open the APK on an Android 8.0+ phone and allow installs from that source when asked.
+
+### One-time setup so updates install over each other
+
+Android only installs an update signed with the same key as the installed app. GitHub's build
+machines make a new throwaway key each time unless you give them one. Do this once:
+
+1. On any computer with Java: `keytool -genkeypair -v -keystore truckie.keystore -alias truckie -keyalg RSA -keysize 2048 -validity 10000`
+2. `base64 -w0 truckie.keystore` (macOS: `base64 -i truckie.keystore`) and copy the output.
+3. In this repo: Settings > Secrets and variables > Actions > New repository secret. Add
+   `TRUCKIE_KEYSTORE_B64` (the base64 text), `KEYSTORE_PASSWORD`, `KEY_ALIAS` (`truckie`) and `KEY_PASSWORD`.
+4. Keep `truckie.keystore` and its passwords somewhere safe. Never commit it.
+
+### Update check while the repo is private
+
+GitHub hides a private repo's releases from the app. Either make the repo public, or add a
+fine-grained token with read-only **Contents** access to this repo only as the `UPDATE_TOKEN`
+secret. Anyone with the APK can extract that token, which is why it must be read-only and limited
+to this repo.
+
+## Build
+
+1. Install Android Studio (it includes the Android SDK and JDK 17+), open this folder, let Gradle sync.
+2. Run the `app` configuration on a phone or emulator (Android 8.0 / API 26 or newer).
+
+Command line: `./gradlew :app:assembleDebug` (APK in `app/build/outputs/apk/debug/`)
+and `./gradlew :core:test` for the unit tests.
+
+## Releases
+
+Raise `versionName` (and `versionCode`) in `app/build.gradle.kts`, add a `## vX.Y` section to
+`CHANGELOG.md`, and push to main. The build publishes "Truckie vX.Y" with `truckie-vX.Y.apk`,
+which is what the in-app update check finds.
+
+## Project layout
+
+- `core/` — plain Kotlin, no Android: stop list rules, route optimizer, OSRM and Photon parsing,
+  navigation links, version check. Unit-tested.
+- `app/` — Android app (Kotlin, Jetpack Compose): screen, address lookup, hand-off, updater.

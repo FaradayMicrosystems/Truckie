@@ -2,6 +2,8 @@
 
 package app.truckie
 
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,6 +18,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
@@ -32,12 +36,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -48,6 +54,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalViewConfiguration
+import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextDecoration
@@ -58,6 +69,8 @@ import app.truckie.core.NavApp
 import app.truckie.core.Stop
 import app.truckie.core.StopType
 import kotlinx.coroutines.delay
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyListState
 
 private val Navy = Color(0xFF1F4E79)
 private val Amber = Color(0xFFF2A900)
@@ -112,11 +125,45 @@ fun TruckieScreen(state: UiState, vm: MainViewModel, navigate: (Stop) -> Unit) {
             NextStopCard(state, onComplete = vm::completeNext, navigate = navigate)
             state.note?.let { Text(it, Modifier.padding(horizontal = 16.dp, vertical = 4.dp), style = MaterialTheme.typography.bodyMedium) }
             AddStopRow(enabled = state.busy == null, onAdd = vm::addStop)
-            LazyColumn(Modifier.weight(1f)) {
+            val listState = rememberLazyListState()
+            val haptics = LocalHapticFeedback.current
+            val reorderState = rememberReorderableLazyListState(listState) { from, to ->
+                // Only open stops are drop targets; their keys are stop ids.
+                val fromId = from.key as? Long ?: return@rememberReorderableLazyListState
+                val toId = to.key as? Long ?: return@rememberReorderableLazyListState
+                vm.dragTo(fromId, toId)
+                haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+            }
+            val baseConfig = LocalViewConfiguration.current
+            val holdConfig = remember(baseConfig) { HoldToDragConfiguration(baseConfig) }
+            LazyColumn(Modifier.weight(1f), state = listState) {
                 val open = state.stops.open
-                item { SectionLabel("To do (${open.size})") }
-                items(open, key = { it.id }) { stop ->
-                    OpenStopRow(open.indexOf(stop) + 1, stop, vm, navigate)
+                item(key = "todo-header") {
+                    SectionLabel(if (Features.DRAG_REORDER && open.size > 1) "To do (${open.size}) · hold a stop to drag it" else "To do (${open.size})")
+                }
+                itemsIndexed(open, key = { _, stop -> stop.id }) { index, stop ->
+                    ReorderableItem(reorderState, key = stop.id, enabled = Features.DRAG_REORDER) { isDragging ->
+                        val lift by animateDpAsState(if (isDragging) 8.dp else 0.dp, label = "lift")
+                        val scale by animateFloatAsState(if (isDragging) 1.03f else 1f, label = "scale")
+                        Surface(
+                            shadowElevation = lift,
+                            color = if (isDragging) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+                            modifier = Modifier.graphicsLayer { scaleX = scale; scaleY = scale },
+                        ) {
+                            CompositionLocalProvider(LocalViewConfiguration provides holdConfig) {
+                                OpenStopRow(
+                                    number = index + 1,
+                                    stop = stop,
+                                    vm = vm,
+                                    navigate = navigate,
+                                    dragModifier = Modifier.longPressDraggableHandle(
+                                        enabled = Features.DRAG_REORDER,
+                                        onDragStarted = { haptics.performHapticFeedback(HapticFeedbackType.LongPress) },
+                                    ),
+                                )
+                            }
+                        }
+                    }
                 }
                 val done = state.stops.done
                 if (done.isNotEmpty()) {
@@ -232,17 +279,22 @@ private fun AddStopRow(enabled: Boolean, onAdd: (String, StopType) -> Unit) {
     }
 }
 
+/** Same as the phone's settings, except a stop must be held for [Features.DRAG_HOLD_MILLIS] before it lifts. */
+private class HoldToDragConfiguration(base: ViewConfiguration) : ViewConfiguration by base {
+    override val longPressTimeoutMillis: Long = Features.DRAG_HOLD_MILLIS
+}
+
 @Composable
 private fun SectionLabel(text: String) {
     Text(text, Modifier.padding(16.dp, 12.dp, 16.dp, 4.dp), style = MaterialTheme.typography.titleSmall)
 }
 
 @Composable
-private fun OpenStopRow(number: Int, stop: Stop, vm: MainViewModel, navigate: (Stop) -> Unit) {
+private fun OpenStopRow(number: Int, stop: Stop, vm: MainViewModel, navigate: (Stop) -> Unit, dragModifier: Modifier) {
     var menu by remember { mutableStateOf(false) }
     Box {
         Row(
-            Modifier.fillMaxWidth().clickable { menu = true }.padding(horizontal = 16.dp, vertical = 12.dp),
+            Modifier.fillMaxWidth().then(dragModifier).clickable { menu = true }.padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {

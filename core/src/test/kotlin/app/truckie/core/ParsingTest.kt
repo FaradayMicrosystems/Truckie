@@ -41,6 +41,15 @@ class ParsingTest {
         assertTrue(m[2][1] > 0) // null cell filled with an estimate
     }
 
+    @Test fun osrmDistancesFromFirst() {
+        val pts = listOf(LatLng(-33.0, 151.0), LatLng(-33.0, 151.1), LatLng(-33.1, 151.0))
+        assertTrue(Osrm.distancesFromFirstUrl(pts).endsWith("?sources=0&annotations=distance"))
+        val d = Osrm.parseDistancesFromFirst(res("osrm_distances.json"), pts)
+        assertEquals(0.0, d[0])
+        assertEquals(12000.5, d[1])
+        assertTrue(d[2] > 10000) // null cell filled from straight line
+    }
+
     @Test fun updateCheck() {
         val json = res("github_release.json")
         val r = assertNotNull(Updates.newerRelease(json, "0.1"))

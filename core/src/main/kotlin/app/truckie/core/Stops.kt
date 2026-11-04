@@ -61,6 +61,19 @@ data class StopList(val stops: List<Stop> = emptyList(), val nextId: Long = 1) {
         return withOpenOrder(openIds)
     }
 
+    /**
+     * Drag and drop: moves an open stop into the slot another open stop holds now. Every stop
+     * between them shifts one place, so the list stays in sequence. Done stops never move.
+     */
+    fun moveTo(id: Long, targetId: Long): StopList {
+        val openIds = open.map { it.id }.toMutableList()
+        val from = openIds.indexOf(id)
+        val to = openIds.indexOf(targetId)
+        if (from < 0 || to < 0 || from == to) return this
+        openIds.add(to, openIds.removeAt(from))
+        return withOpenOrder(openIds)
+    }
+
     /** Puts the open stops in the given order. Done stops keep their places ahead of them. */
     fun withOpenOrder(openIds: List<Long>): StopList {
         val byId = open.associateBy { it.id }

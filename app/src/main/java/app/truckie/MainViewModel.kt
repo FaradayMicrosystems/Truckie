@@ -97,6 +97,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun remove(id: Long) = change { it.remove(id) }
     fun makeNext(id: Long) { if (Features.MANUAL_REORDER) change { it.makeNext(id) } }
     fun move(id: Long, by: Int) { if (Features.MANUAL_REORDER) change { it.move(id, by) } }
+
+    /** Drag and drop: [id] takes the place of [targetId]; stops in between shift by one. */
+    fun dragTo(id: Long, targetId: Long) { if (Features.DRAG_REORDER) change { it.moveTo(id, targetId) } }
     fun setType(id: Long, type: StopType) = change { it.setType(id, type) }
     fun clearAll() = change { it.cleared() }
 
@@ -109,6 +112,36 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun optimize() {
         if (!Features.OPTIMIZE) return
+        if (Features.ROUTE_SOLVER) solveRoute() else sortNearestFirst()
+    }
+
+    /** v0.2 Optimize: nearest to farthest from your current position, by road where possible. */
+    private fun sortNearestFirst() {
+        val open = _state.value.stops.open
+        if (open.size < 2) {
+            _state.update { it.copy(note = "Add at least 2 stops to optimize.") }
+            return
+        }
+        val here = places.here()
+        if (here == null) {
+            _state.update { it.copy(note = "Truckie doesn't know where you are yet. Turn on location (and allow it for Truckie), then tap Optimize again.") }
+            return
+        }
+        viewModelScope.launch {
+            _state.update { it.copy(busy = "Sorting ${open.size} stops nearest first…", note = null) }
+            val points = listOf(here) + open.map { it.location }
+            // Road distance from OSRM; straight-line distance if there's no signal or it fails.
+            val road = runCatching { Osrm.parseDistancesFromFirst(Http.get(Osrm.distancesFromFirstUrl(points)), points) }.getOrNull()
+            val distances = road?.drop(1)?.toDoubleArray() ?: Planner.straightLineDistances(open, here)
+            val order = Planner.nearestFirst(open, distances)
+            if (!applyOrder(order)) return@launch
+            val basis = if (road != null) "by road distance" else "by straight-line distance, no road data"
+            _state.update { it.copy(busy = null, note = "Sorted ${open.size} stops nearest to farthest from you ($basis).") }
+        }
+    }
+
+    /** Kept for later (Features.ROUTE_SOLVER): the shortest drive through every stop. */
+    private fun solveRoute() {
         val open = _state.value.stops.open
         if (open.size < 2) {
             _state.update { it.copy(note = "Add at least 2 stops to optimize.") }
@@ -122,13 +155,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             val road = runCatching { Osrm.parseTable(Http.get(Osrm.tableUrl(points)), points) }.getOrNull()
             val matrix = road ?: Geo.estimateMatrix(points)
             val order = withContext(Dispatchers.Default) { Planner.optimizedOrder(open, here, matrix) }
-            // The list may have changed while waiting; only apply if the open stops are the same.
-            val current = _state.value.stops
-            if (current.open.map { it.id }.toSet() != order.toSet()) {
-                _state.update { it.copy(busy = null, note = "Stops changed while optimizing. Tap Optimize again.") }
-                return@launch
-            }
-            change { it.withOpenOrder(order) }
+            if (!applyOrder(order)) return@launch
             val idx = order.map { id -> open.indexOfFirst { it.id == id } + if (here != null) 1 else 0 }
             val path = (if (here != null) listOf(0) else emptyList()) + idx
             val minutes = (RouteOptimizer.cost(path, matrix) / 60).toInt()
@@ -136,6 +163,16 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             val basis = if (road != null) "road times" else "straight-line estimate, no road data"
             _state.update { it.copy(busy = null, note = "Optimized ${open.size} stops $from: about ${formatMinutes(minutes)} driving ($basis).") }
         }
+    }
+
+    /** Applies a new order unless the open stops changed while it was being worked out. */
+    private fun applyOrder(order: List<Long>): Boolean {
+        if (_state.value.stops.open.map { it.id }.toSet() != order.toSet()) {
+            _state.update { it.copy(busy = null, note = "Stops changed while optimizing. Tap Optimize again.") }
+            return false
+        }
+        change { it.withOpenOrder(order) }
+        return true
     }
 
     // --- Updates ---

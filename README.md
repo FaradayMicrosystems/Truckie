@@ -5,33 +5,34 @@ them in a good order, and hands Google Maps (or Waze) one stop at a time. Google
 Truckie decides where to go next. That stops Google Maps inserting new stops mid-route and gets
 around Waze's stop limit.
 
-## What works in v0.1.1
-
-> Stops stay in the order you add them. Optimize and manual re-ordering are built but switched
-> off in `app/src/main/java/app/truckie/Features.kt` until they are wanted; the notes below on
-> them describe the hidden code.
+## What works in v0.2
 
 - **Add stops** by typing an address, `lat,lng`, or pasting a Google Maps link. New stops always
   go on the **end** of the list, in the order you add them. Tick **Pickup** for a pickup.
-- **Optimize** (top bar) re-orders only the stops still to do, from your current position
-  (or from the current next stop if location is off). Never automatic.
+- **Hold and drag:** hold a stop for 500 ms until it lifts, drag it to a new place, let go.
+  Everything in between shifts by one, so the list stays in sequence.
+- **Optimize** (top bar) sorts the stops still to do nearest to farthest from your current
+  position, by road distance (straight-line without signal). Never automatic. Needs location.
 - **Driving loop, one tap per stop:**
   1. The next stop shows in large type with a big **Delivery completed?** button (**Picked up?** for pickups).
   2. Tap it: the stop is struck out into **Done** (tap **Restore** to undo a misclick).
   3. **Navigate to next stop?** counts down 5 seconds. No tap = Yes: Google Maps or Waze opens
      already navigating. **No** keeps you in Truckie.
-- **Tap any stop** to navigate there, make it next, move it, switch pickup/delivery, or remove it.
+- **Tap a stop** to navigate there, switch pickup/delivery, or remove it.
 - **Menu (⋮):** Google Maps or Waze, check for updates, clear all stops.
 - **Update check** on launch against this repo's latest GitHub Release: **Update now / Later**.
 
-Not in v0.1: QR scanning from the work PDA (next build), delivery-platform imports, pickup-before-delivery linking.
+Switches in `app/src/main/java/app/truckie/Features.kt` turn built features on or off. The full
+route solver (`ROUTE_SOLVER`) and the menu re-order items (`MANUAL_REORDER`) are off.
+
+Not yet: QR scanning from the work PDA (next build), delivery-platform imports, pickup-before-delivery linking.
 
 ## Long-term goal
 
 Auto-import jobs (for example from email, spreadsheets, or dispatch systems) so routes build themselves without manual entry.
 QR scanning from the work PDA comes first.
 
-## How routing works
+## How the full route solver works (switched off)
 
 1. Truckie asks for a drive-time grid between your position and every stop still to do, from the
    OSRM public server (no key). With no signal, it uses straight-line estimates instead.

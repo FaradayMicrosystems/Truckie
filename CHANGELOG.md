@@ -1,10 +1,14 @@
 # Changelog
 
-## v0.1.1 — 2026-11-04
+## v0.2 — 2026-11-04
 
-- Stops now always stay in the order you add them.
-- The Optimize button is hidden and does nothing. "Make next stop", "Move up" and "Move down" are
-  hidden too. The code is kept behind switches in `Features.kt` for a later version.
+- Stops stay in the order you add them, until you move them.
+- **Hold and drag:** hold a stop for half a second and it lifts (with a buzz). Drag it anywhere in
+  the list and let go. The stops in between shift up or down, and the numbers update.
+- **Optimize** now sorts the stops still to do nearest to farthest from where you are, by road
+  distance (straight-line when there's no signal). It needs location turned on.
+- "Make next stop", "Move up" and "Move down" are gone from the stop menu; dragging replaces them.
+- The full route solver from v0.1 is kept in the code, switched off in `Features.kt`.
 
 ## v0.1 — 2026-11-03
 

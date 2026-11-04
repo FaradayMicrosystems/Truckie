@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.1.1 — 2026-11-04
+
+- Stops now always stay in the order you add them.
+- The Optimize button is hidden and does nothing. "Make next stop", "Move up" and "Move down" are
+  hidden too. The code is kept behind switches in `Features.kt` for a later version.
+
 ## v0.1 — 2026-11-03
 
 First build: the routing loop.

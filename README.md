@@ -5,7 +5,11 @@ them in a good order, and hands Google Maps (or Waze) one stop at a time. Google
 Truckie decides where to go next. That stops Google Maps inserting new stops mid-route and gets
 around Waze's stop limit.
 
-## What works in v0.1
+## What works in v0.1.1
+
+> Stops stay in the order you add them. Optimize and manual re-ordering are built but switched
+> off in `app/src/main/java/app/truckie/Features.kt` until they are wanted; the notes below on
+> them describe the hidden code.
 
 - **Add stops** by typing an address, `lat,lng`, or pasting a Google Maps link. New stops always
   go on the **end** of the list, in the order you add them. Tick **Pickup** for a pickup.

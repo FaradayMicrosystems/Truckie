@@ -95,8 +95,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun restore(id: Long) = change { it.restore(id) }
     fun remove(id: Long) = change { it.remove(id) }
-    fun makeNext(id: Long) = change { it.makeNext(id) }
-    fun move(id: Long, by: Int) = change { it.move(id, by) }
+    fun makeNext(id: Long) { if (Features.MANUAL_REORDER) change { it.makeNext(id) } }
+    fun move(id: Long, by: Int) { if (Features.MANUAL_REORDER) change { it.move(id, by) } }
     fun setType(id: Long, type: StopType) = change { it.setType(id, type) }
     fun clearAll() = change { it.cleared() }
 
@@ -108,6 +108,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     // --- Optimize (only when the driver asks) ---
 
     fun optimize() {
+        if (!Features.OPTIMIZE) return
         val open = _state.value.stops.open
         if (open.size < 2) {
             _state.update { it.copy(note = "Add at least 2 stops to optimize.") }

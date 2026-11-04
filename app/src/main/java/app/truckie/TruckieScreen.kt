@@ -82,7 +82,9 @@ fun TruckieScreen(state: UiState, vm: MainViewModel, navigate: (Stop) -> Unit) {
                 title = { Text("Truckie") },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Navy, titleContentColor = Color.White, actionIconContentColor = Color.White),
                 actions = {
-                    TextButton(onClick = vm::optimize, enabled = state.busy == null) { Text("Optimize", color = Color.White) }
+                    if (Features.OPTIMIZE) {
+                        TextButton(onClick = vm::optimize, enabled = state.busy == null) { Text("Optimize", color = Color.White) }
+                    }
                     Box {
                         TextButton(onClick = { menuOpen = true }) { Text("⋮", color = Color.White, fontSize = 22.sp) }
                         DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
@@ -252,9 +254,11 @@ private fun OpenStopRow(number: Int, stop: Stop, vm: MainViewModel, navigate: (S
         }
         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
             DropdownMenuItem(text = { Text("Navigate here") }, onClick = { menu = false; navigate(stop) })
-            DropdownMenuItem(text = { Text("Make next stop") }, onClick = { menu = false; vm.makeNext(stop.id) })
-            DropdownMenuItem(text = { Text("Move up") }, onClick = { menu = false; vm.move(stop.id, -1) })
-            DropdownMenuItem(text = { Text("Move down") }, onClick = { menu = false; vm.move(stop.id, +1) })
+            if (Features.MANUAL_REORDER) {
+                DropdownMenuItem(text = { Text("Make next stop") }, onClick = { menu = false; vm.makeNext(stop.id) })
+                DropdownMenuItem(text = { Text("Move up") }, onClick = { menu = false; vm.move(stop.id, -1) })
+                DropdownMenuItem(text = { Text("Move down") }, onClick = { menu = false; vm.move(stop.id, +1) })
+            }
             val other = if (stop.type == StopType.PICKUP) StopType.DELIVERY else StopType.PICKUP
             DropdownMenuItem(
                 text = { Text(if (other == StopType.PICKUP) "Mark as pickup" else "Mark as delivery") },

@@ -5,7 +5,7 @@ them in a good order, and hands Google Maps (or Waze) one stop at a time. Google
 Truckie decides where to go next. That stops Google Maps inserting new stops mid-route and gets
 around Waze's stop limit.
 
-## What works in v0.2
+## What works in v0.3
 
 - **Add stops** by typing an address, `lat,lng`, or pasting a Google Maps link. New stops always
   go on the **end** of the list, in the order you add them. Tick **Pickup** for a pickup.
@@ -21,6 +21,16 @@ around Waze's stop limit.
 - **Tap a stop** to navigate there, switch pickup/delivery, or remove it.
 - **Menu (⋮):** Google Maps or Waze, check for updates, clear all stops.
 - **Update check** on launch against this repo's latest GitHub Release: **Update now / Later**.
+
+### Android Auto
+
+- Car home screen: next stop, **Delivery completed?** / **Picked up?**, **Navigate**, **Undo**, **Stops**.
+- **Navigate to next stop?** after each stop, auto-yes after 5 seconds.
+- Phone and car share one stop list. Navigation in the car opens Android Auto's default nav app.
+- Add and drag stops on the phone; Android Auto doesn't allow typing or dragging.
+- **To see Truckie in the car** (sideloaded apps are hidden by default): open Android Auto settings
+  on the phone, tap **Version** about 10 times to unlock developer settings, then in the ⋮ menu >
+  **Developer settings**, turn on **Unknown sources**. Reconnect to the car.
 
 Switches in `app/src/main/java/app/truckie/Features.kt` turn built features on or off. The full
 route solver (`ROUTE_SOLVER`) and the menu re-order items (`MANUAL_REORDER`) are off.
@@ -88,3 +98,4 @@ which is what the in-app update check finds.
 - `core/` — plain Kotlin, no Android: stop list rules, route optimizer, OSRM and Photon parsing,
   navigation links, version check. Unit-tested.
 - `app/` — Android app (Kotlin, Jetpack Compose): screen, address lookup, hand-off, updater.
+  `app/.../car/` holds the Android Auto screens (car app library).

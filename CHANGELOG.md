@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.3 — 2026-11-04
+
+- **Android Auto:** Truckie shows up on the car screen.
+  - Home: the next stop with **Delivery completed?** (or **Picked up?**) and **Navigate**.
+  - After a stop: **Navigate to next stop?**, which opens navigation after 5 seconds unless you tap **No**.
+  - **Undo** brings back the stop you just completed. **Stops** lists the stops still to do; tap one to navigate there.
+  - Phone and car share one list, so a stop ticked off in the car is ticked off on the phone.
+  - In the car, navigation opens in Android Auto's default navigation app.
+- Adding and dragging stops stays on the phone (Android Auto doesn't allow typing or dragging).
+- Sideloaded apps only appear in Android Auto with **Unknown sources** turned on in its developer settings.
+
 ## v0.2 — 2026-11-04
 
 - Stops stay in the order you add them, until you move them.

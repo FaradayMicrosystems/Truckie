@@ -25,8 +25,8 @@ android {
         applicationId = "app.truckie"
         minSdk = 26
         targetSdk = 35
-        versionCode = 3
-        versionName = "0.2"
+        versionCode = 4
+        versionName = "0.3"
         buildConfigField("String", "UPDATE_REPO", "\"FaradayMicrosystems/truckie\"")
         // Never commit the token here: it comes from local.properties or the CI secret.
         buildConfigField("String", "UPDATE_TOKEN", quoted("UPDATE_TOKEN"))
@@ -80,4 +80,7 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     // Hold-and-drag re-ordering in the stop list.
     implementation("sh.calvin.reorderable:reorderable:2.4.3")
+    // Android Auto screens (same library and version as pinnr).
+    implementation("androidx.car.app:app:1.4.0")
+    implementation("androidx.car.app:app-projected:1.4.0")
 }

@@ -36,14 +36,16 @@ data class UiState(
 )
 
 class MainViewModel(app: Application) : AndroidViewModel(app) {
-    private val store = Store(app)
+    private val repo = StopRepository.init(app)
     private val prefs = Prefs(app)
     private val places = Places(app)
 
-    private val _state = MutableStateFlow(UiState(stops = store.load(), navApp = prefs.navApp))
+    private val _state = MutableStateFlow(UiState(stops = repo.stops.value, navApp = prefs.navApp))
     val state: StateFlow<UiState> = _state
 
     init {
+        // Changes made from the Android Auto screen show up here.
+        viewModelScope.launch { repo.stops.collect { l -> _state.update { it.copy(stops = l) } } }
         viewModelScope.launch {
             val r = Updater.check()
             if (r != null) _state.update { it.copy(update = r) }
@@ -51,9 +53,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private fun change(f: (StopList) -> StopList) {
-        val next = f(_state.value.stops)
+        val next = repo.change(f)
         _state.update { it.copy(stops = next) }
-        viewModelScope.launch(Dispatchers.IO) { store.save(next) }
     }
 
     // --- Adding stops (always appended to the end) ---

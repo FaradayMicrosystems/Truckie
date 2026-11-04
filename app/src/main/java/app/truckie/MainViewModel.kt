@@ -24,7 +24,7 @@ data class UiState(
     val stops: StopList = StopList(),
     val navApp: NavApp = NavApp.GOOGLE_MAPS,
     /** What Optimize compares: road distance or drive time (menu toggle, remembered). */
-    val optimizeBy: OptimizeBy = OptimizeBy.DRIVE_TIME,
+    val optimizeBy: OptimizeBy = OptimizeBy.ROAD_DISTANCE,
     /** Shown while something slow runs, e.g. "Finding address…". */
     val busy: String? = null,
     /** One-line note under the next stop, e.g. the last optimize result or an error. */

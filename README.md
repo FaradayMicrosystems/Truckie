@@ -12,15 +12,15 @@ around Waze's stop limit.
 - **Hold and drag:** hold a stop for 500 ms until it lifts, drag it to a new place, let go.
   Everything in between shifts by one, so the list stays in sequence.
 - **Optimize** (top bar) chains the stops still to do by road: nearest to you first, then the
-  nearest to that stop, and so on. "Nearest" is **drive time** or **road distance**, chosen in the
-  ⋮ menu and shown under the button. Never automatic. Needs location.
+  nearest to that stop, and so on. "Nearest" means **road distance** (the drive-time option was
+  switched off in v0.4.2 because it gave bad orders). Never automatic. Needs location.
 - **Driving loop, one tap per stop:**
   1. The next stop shows in large type with two pill buttons: blue **Navigate** (left) and green **That one's done! Let's ride!** (right, for pickups and deliveries).
   2. Tap it: the stop is struck out into **Done** (tap **Restore** to undo a misclick).
   3. **Navigate to next stop?** counts down 5 seconds. No tap = Yes: Google Maps or Waze opens
      already navigating. **No** keeps you in Truckie.
 - **Tap a stop** to navigate there, switch pickup/delivery, or remove it.
-- **Menu (⋮):** Google Maps or Waze, optimize by drive time or road distance, **Undo optimize** (back to the order added), check for updates, clear all stops.
+- **Menu (⋮):** Google Maps or Waze, **Undo optimize** (back to the order added), check for updates, clear all stops.
 - **Update check** on launch against this repo's latest GitHub Release: **Update now / Later**.
   It stays quiet unless there's an update. **⋮ > Check for updates** always says what happened:
   up to date, no signal, or GitHub refused the token (and what to fix).

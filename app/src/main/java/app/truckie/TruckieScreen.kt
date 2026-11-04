@@ -123,12 +123,14 @@ fun TruckieScreen(state: UiState, vm: MainViewModel, navigate: (Stop) -> Unit) {
                                     onClick = { vm.setNavApp(app); menuOpen = false },
                                 )
                             }
-                            HorizontalDivider()
-                            OptimizeBy.entries.forEach { by ->
-                                DropdownMenuItem(
-                                    text = { Text((if (state.optimizeBy == by) "● " else "○ ") + by.label) },
-                                    onClick = { vm.setOptimizeBy(by); menuOpen = false },
-                                )
+                            if (Features.OPTIMIZE_BY_DRIVE_TIME) {
+                                HorizontalDivider()
+                                OptimizeBy.entries.forEach { by ->
+                                    DropdownMenuItem(
+                                        text = { Text((if (state.optimizeBy == by) "● " else "○ ") + by.label) },
+                                        onClick = { vm.setOptimizeBy(by); menuOpen = false },
+                                    )
+                                }
                             }
                             HorizontalDivider()
                             DropdownMenuItem(text = { Text("Undo optimize (order added)") }, onClick = { vm.undoOptimize(); menuOpen = false })

@@ -12,6 +12,7 @@ class Prefs(context: Context) {
         set(v) = sp.edit().putString("navApp", v.name).apply()
 
     var optimizeBy: OptimizeBy
-        get() = runCatching { OptimizeBy.valueOf(sp.getString("optimizeBy", null)!!) }.getOrDefault(OptimizeBy.DRIVE_TIME)
+        get() = if (!Features.OPTIMIZE_BY_DRIVE_TIME) OptimizeBy.ROAD_DISTANCE
+            else runCatching { OptimizeBy.valueOf(sp.getString("optimizeBy", null)!!) }.getOrDefault(OptimizeBy.DRIVE_TIME)
         set(v) = sp.edit().putString("optimizeBy", v.name).apply()
 }

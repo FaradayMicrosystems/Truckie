@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.3.1 — 2026-11-04
+
+- **Fix:** Navigate sent Google Maps / Waze the coordinates Truckie had looked up, and those
+  sometimes pointed at the middle of the suburb instead of the house. Navigate now sends the
+  address itself, so Google Maps / Waze find it (phone and Android Auto). Stops entered as
+  `lat,lng` still navigate to those exact coordinates.
+
 ## v0.3 — 2026-11-04
 
 - **Android Auto:** Truckie shows up on the car screen.

@@ -33,6 +33,24 @@ class ParsingTest {
         }
     }
 
+    @Test fun navigateByAddressNotCoordinates() {
+        // Coordinates from the lookup point at the suburb centre; the address must win.
+        val stop = Stop(1, "12 King Street, Newtown NSW 2042", LatLng(-33.89, 151.18))
+        assertEquals("google.navigation:q=12%20King%20Street%2C%20Newtown%20NSW%202042&mode=d", NavApp.GOOGLE_MAPS.navigationUri(stop))
+        assertEquals("https://waze.com/ul?q=12%20King%20Street%2C%20Newtown%20NSW%202042&navigate=yes", NavApp.WAZE.navigationUri(stop))
+        assertEquals(
+            "https://www.google.com/maps/dir/?api=1&destination=12%20King%20Street%2C%20Newtown%20NSW%202042&travelmode=driving",
+            NavApp.GOOGLE_MAPS.webUri(stop),
+        )
+        assertEquals("geo:0,0?q=12%20King%20Street%2C%20Newtown%20NSW%202042", NavApp.carGeoUri(stop))
+    }
+
+    @Test fun stopsTypedAsCoordinatesStillUseCoordinates() {
+        val stop = Stop(1, "-33.8688, 151.2093", LatLng(-33.8688, 151.2093))
+        assertEquals("google.navigation:q=-33.868800,151.209300&mode=d", NavApp.GOOGLE_MAPS.navigationUri(stop))
+        assertEquals("geo:-33.868800,151.209300", NavApp.carGeoUri(stop))
+    }
+
     @Test fun osrmTable() {
         val pts = listOf(LatLng(-33.0, 151.0), LatLng(-33.0, 151.1), LatLng(-33.1, 151.0))
         val m = Osrm.parseTable(res("osrm_table.json"), pts)

@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import androidx.car.app.CarContext
 import androidx.car.app.CarToast
+import app.truckie.core.NavApp
 import app.truckie.core.Stop
 
 /**
@@ -12,7 +13,7 @@ import app.truckie.core.Stop
  */
 fun CarContext.navigateTo(stop: Stop) {
     try {
-        startCarApp(Intent(CarContext.ACTION_NAVIGATE, Uri.parse("geo:${stop.location.toQuery()}")))
+        startCarApp(Intent(CarContext.ACTION_NAVIGATE, Uri.parse(NavApp.carGeoUri(stop))))
     } catch (e: Exception) {
         CarToast.makeText(this, "Couldn't open navigation: ${e.message}", CarToast.LENGTH_LONG).show()
     }

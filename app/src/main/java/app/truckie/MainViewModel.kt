@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import app.truckie.core.Geo
 import app.truckie.core.NavApp
+import app.truckie.core.OptimizeBy
 import app.truckie.core.Osrm
 import app.truckie.core.Place
 import app.truckie.core.Planner
@@ -22,6 +23,8 @@ import kotlinx.coroutines.withContext
 data class UiState(
     val stops: StopList = StopList(),
     val navApp: NavApp = NavApp.GOOGLE_MAPS,
+    /** What Optimize compares: road distance or drive time (menu toggle, remembered). */
+    val optimizeBy: OptimizeBy = OptimizeBy.DRIVE_TIME,
     /** Shown while something slow runs, e.g. "Finding address…". */
     val busy: String? = null,
     /** One-line note under the next stop, e.g. the last optimize result or an error. */
@@ -40,7 +43,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private val prefs = Prefs(app)
     private val places = Places(app)
 
-    private val _state = MutableStateFlow(UiState(stops = repo.stops.value, navApp = prefs.navApp))
+    private val _state = MutableStateFlow(UiState(stops = repo.stops.value, navApp = prefs.navApp, optimizeBy = prefs.optimizeBy))
     val state: StateFlow<UiState> = _state
 
     init {
@@ -115,15 +118,23 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         _state.update { it.copy(navApp = app) }
     }
 
+    fun setOptimizeBy(by: OptimizeBy) {
+        prefs.optimizeBy = by
+        _state.update { it.copy(optimizeBy = by) }
+    }
+
     // --- Optimize (only when the driver asks) ---
 
     fun optimize() {
         if (!Features.OPTIMIZE) return
-        if (Features.ROUTE_SOLVER) solveRoute() else sortNearestFirst()
+        if (Features.ROUTE_SOLVER) solveRoute() else chainNearestNext()
     }
 
-    /** v0.2 Optimize: nearest to farthest from your current position, by road where possible. */
-    private fun sortNearestFirst() {
+    /**
+     * Optimize (v0.4.1): from where you are, go to the nearest stop by road, then from that stop
+     * to the nearest one left, and so on. "Nearest" is road distance or drive time, per the menu.
+     */
+    private fun chainNearestNext() {
         val open = _state.value.stops.open
         if (open.size < 2) {
             _state.update { it.copy(note = "Add at least 2 stops to optimize.") }
@@ -134,16 +145,17 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             _state.update { it.copy(note = "Truckie doesn't know where you are yet. Turn on location (and allow it for Truckie), then tap Optimize again.") }
             return
         }
+        val by = _state.value.optimizeBy
         viewModelScope.launch {
-            _state.update { it.copy(busy = "Sorting ${open.size} stops nearest first…", note = null) }
+            _state.update { it.copy(busy = "Optimizing ${open.size} stops ${by.short}…", note = null) }
             val points = listOf(here) + open.map { it.location }
-            // Road distance from OSRM; straight-line distance if there's no signal or it fails.
-            val road = runCatching { Osrm.parseDistancesFromFirst(Http.get(Osrm.distancesFromFirstUrl(points)), points) }.getOrNull()
-            val distances = road?.drop(1)?.toDoubleArray() ?: Planner.straightLineDistances(open, here)
-            val order = Planner.nearestFirst(open, distances)
+            // One OSRM call for the whole road grid; straight-line estimates if there's no signal.
+            val road = runCatching { Osrm.parseGrid(Http.get(Osrm.gridUrl(points, by)), points, by) }.getOrNull()
+            val grid = road ?: Geo.estimateGrid(points, by)
+            val order = withContext(Dispatchers.Default) { Planner.nearestNextOrder(open, grid) }
             if (!applyOrder(order)) return@launch
-            val basis = if (road != null) "by road distance" else "by straight-line distance, no road data"
-            _state.update { it.copy(busy = null, note = "Sorted ${open.size} stops nearest to farthest from you ($basis).") }
+            val basis = if (road != null) by.short else "by straight-line distance (no road data, check signal)"
+            _state.update { it.copy(busy = null, note = "Optimized ${open.size} stops, nearest next $basis.") }
         }
     }
 

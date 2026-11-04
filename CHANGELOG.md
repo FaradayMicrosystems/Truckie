@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.4.1 — 2026-11-04
+
+- **Optimize chains by road:** from where you are, it goes to the nearest stop, then from that stop
+  to the nearest one left, and so on. (Before, every stop was measured from your position only.)
+- **Choose what "nearest" means** in the ⋮ menu: **Optimize by drive time** (default) or
+  **Optimize by road distance**. Truckie remembers your choice.
+- The **Optimize** button is wider and shows the mode underneath ("by drive time" / "by road distance").
+- One road lookup covers all stops. With no signal it falls back to straight-line distance and says so.
+
 ## v0.4 — 2026-11-04
 
 - The next-stop card now has two big pill buttons side by side, so they're easy to tell apart:

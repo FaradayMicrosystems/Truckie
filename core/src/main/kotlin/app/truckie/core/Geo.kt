@@ -37,6 +37,11 @@ object Geo {
     fun estimateMatrix(points: List<LatLng>): Array<DoubleArray> =
         Array(points.size) { i -> DoubleArray(points.size) { j -> if (i == j) 0.0 else estimateDriveSeconds(points[i], points[j]) } }
 
+    /** Straight-line estimate grid in the unit [by] uses: metres (x1.3 for roads) or seconds. */
+    fun estimateGrid(points: List<LatLng>, by: OptimizeBy): Array<DoubleArray> =
+        if (by == OptimizeBy.DRIVE_TIME) estimateMatrix(points)
+        else Array(points.size) { i -> DoubleArray(points.size) { j -> if (i == j) 0.0 else haversineMeters(points[i], points[j]) * 1.3 } }
+
     private val PAIR = Regex("""(-?\d{1,2}(?:\.\d+)?)\s*,\s*(-?\d{1,3}(?:\.\d+)?)""")
 
     /**

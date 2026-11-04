@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.items
@@ -68,6 +69,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.truckie.core.NavApp
+import app.truckie.core.OptimizeBy
 import app.truckie.core.Stop
 import app.truckie.core.StopType
 import kotlinx.coroutines.delay
@@ -100,7 +102,17 @@ fun TruckieScreen(state: UiState, vm: MainViewModel, navigate: (Stop) -> Unit) {
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Navy, titleContentColor = Color.White, actionIconContentColor = Color.White),
                 actions = {
                     if (Features.OPTIMIZE) {
-                        TextButton(onClick = vm::optimize, enabled = state.busy == null) { Text("Optimize", color = Color.White) }
+                        // Wider, two lines: shows which mode Optimize will use before you tap.
+                        TextButton(
+                            onClick = vm::optimize,
+                            enabled = state.busy == null,
+                            modifier = Modifier.widthIn(min = 132.dp),
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("Optimize", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp, lineHeight = 18.sp)
+                                Text(state.optimizeBy.short, color = Color.White, fontSize = 11.sp, lineHeight = 13.sp, maxLines = 1)
+                            }
+                        }
                     }
                     Box {
                         TextButton(onClick = { menuOpen = true }) { Text("⋮", color = Color.White, fontSize = 22.sp) }
@@ -109,6 +121,13 @@ fun TruckieScreen(state: UiState, vm: MainViewModel, navigate: (Stop) -> Unit) {
                                 DropdownMenuItem(
                                     text = { Text((if (state.navApp == app) "● " else "○ ") + "Navigate with ${app.label}") },
                                     onClick = { vm.setNavApp(app); menuOpen = false },
+                                )
+                            }
+                            HorizontalDivider()
+                            OptimizeBy.entries.forEach { by ->
+                                DropdownMenuItem(
+                                    text = { Text((if (state.optimizeBy == by) "● " else "○ ") + by.label) },
+                                    onClick = { vm.setOptimizeBy(by); menuOpen = false },
                                 )
                             }
                             HorizontalDivider()

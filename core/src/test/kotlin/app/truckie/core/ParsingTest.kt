@@ -91,6 +91,11 @@ class ParsingTest {
         assertTrue(Updates.compareVersions("v0.1.1", "0.1") > 0)
         assertEquals(0, Updates.compareVersions("v0.1", "0.1.0"))
         assertTrue(Updates.compareVersions("0.9", "0.10") < 0)
+        assertEquals("v0.2", Updates.latest(json)?.tag) // up-to-date checks can still name the latest
+        assertTrue(Updates.failureReason(404, hasToken = true).contains("Contents: Read-only"))
+        assertTrue(Updates.failureReason(404, hasToken = false).contains("no update token"))
+        assertTrue(Updates.failureReason(401, hasToken = true).contains("expired"))
+        assertTrue(Updates.failureReason(null, hasToken = true).contains("signal"))
     }
 
     @Test fun photon() {

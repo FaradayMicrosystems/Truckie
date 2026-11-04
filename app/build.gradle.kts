@@ -25,21 +25,32 @@ android {
         applicationId = "app.truckie"
         minSdk = 26
         targetSdk = 35
-        versionCode = 7
-        versionName = "0.4.1"
+        versionCode = 8
+        versionName = "0.4.2"
         buildConfigField("String", "UPDATE_REPO", "\"FaradayMicrosystems/truckie\"")
         // Never commit the token here: it comes from local.properties or the CI secret.
         buildConfigField("String", "UPDATE_TOKEN", quoted("UPDATE_TOKEN"))
     }
 
-    val keystore = prop("KEYSTORE_FILE").takeIf { it.isNotBlank() }?.let { rootProject.file(it) }?.takeIf { it.exists() }
+    // One permanent key, committed in signing/ (private repo), so every build signs the same and
+    // updates install over each other. local.properties can still point at another keystore.
+    val signing = java.util.Properties().apply {
+        rootProject.file("signing/signing.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
+    }
+    fun signProp(key: String): String = prop(key).ifBlank { signing.getProperty(key).orEmpty() }
+    val keystore = signProp("KEYSTORE_FILE").takeIf { it.isNotBlank() }?.let { rootProject.file(it) }?.takeIf { it.exists() }
+    defaultConfig {
+        // Lets the app warn about "App not installed" if a build ever falls back to a throwaway key.
+        buildConfigField("boolean", "SHARED_SIGNING_KEY", (keystore != null).toString())
+    }
+
     signingConfigs {
         if (keystore != null) {
             create("shared") {
                 storeFile = keystore
-                storePassword = prop("KEYSTORE_PASSWORD")
-                keyAlias = prop("KEY_ALIAS")
-                keyPassword = prop("KEY_PASSWORD")
+                storePassword = signProp("KEYSTORE_PASSWORD")
+                keyAlias = signProp("KEY_ALIAS")
+                keyPassword = signProp("KEY_PASSWORD")
             }
         }
     }

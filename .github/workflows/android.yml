@@ -21,30 +21,15 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
-      # Optional repository secrets (Settings > Secrets and variables > Actions):
-      #   TRUCKIE_KEYSTORE_B64, KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD  shared signing key (see README)
+      # Signing: the permanent key in signing/ (committed on purpose, private repo) signs every build.
+      # Optional repository secret:
       #   UPDATE_TOKEN  read-only token for the in-app update check while the repo is private
-      - name: Write signing key and update token
+      - name: Write update token
         env:
-          TRUCKIE_KEYSTORE_B64: ${{ secrets.TRUCKIE_KEYSTORE_B64 }}
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
           UPDATE_TOKEN: ${{ secrets.UPDATE_TOKEN }}
         run: |
           : > local.properties
-          if [ -n "$TRUCKIE_KEYSTORE_B64" ]; then
-            echo "$TRUCKIE_KEYSTORE_B64" | base64 -d > truckie.keystore
-            {
-              echo "KEYSTORE_FILE=truckie.keystore"
-              echo "KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD"
-              echo "KEY_ALIAS=$KEY_ALIAS"
-              echo "KEY_PASSWORD=$KEY_PASSWORD"
-            } >> local.properties
-            SIGN="shared Truckie key (updates install over each other)"
-          else
-            SIGN="throwaway debug key: uninstall the old version before installing this one"
-          fi
+          if [ -f signing/shared.keystore ]; then SIGN="shared Truckie key (updates install over each other)"; else SIGN="throwaway debug key: uninstall the old version first"; fi
           if [ -n "$UPDATE_TOKEN" ]; then echo "UPDATE_TOKEN=$UPDATE_TOKEN" >> local.properties; TOK="built in"; else TOK="not set"; fi
           echo "BUILD_STATUS=Signed with: $SIGN. Update-check token: $TOK." >> "$GITHUB_ENV"
           echo "Signing: $SIGN / token: $TOK"

@@ -10,6 +10,13 @@ import app.truckie.core.Release
 import app.truckie.core.Updates
 import java.io.File
 
+/** What a check for updates found. */
+sealed interface UpdateCheck {
+    data class Newer(val release: Release) : UpdateCheck
+    data class UpToDate(val latestTag: String?) : UpdateCheck
+    data class Failed(val reason: String) : UpdateCheck
+}
+
 /** On launch: is there a newer GitHub Release? "Update now" downloads its APK and opens Android's installer. */
 object Updater {
     private val token get() = BuildConfig.UPDATE_TOKEN
@@ -20,10 +27,19 @@ object Updater {
         if (token.isNotBlank()) put("Authorization", "Bearer $token")
     }
 
-    /** Null when up to date, offline, or the repo can't be read (a private repo without a token). */
-    suspend fun check(): Release? = runCatching {
-        Updates.newerRelease(Http.get(Updates.latestReleaseUrl(BuildConfig.UPDATE_REPO), headers("application/vnd.github+json")), BuildConfig.VERSION_NAME)
-    }.getOrNull()
+    /** Asks GitHub for the latest release and says plainly what happened. */
+    suspend fun check(): UpdateCheck = try {
+        val json = Http.get(Updates.latestReleaseUrl(BuildConfig.UPDATE_REPO), headers("application/vnd.github+json"))
+        val latest = Updates.latest(json)
+        if (latest != null && Updates.compareVersions(latest.tag, BuildConfig.VERSION_NAME) > 0) UpdateCheck.Newer(latest)
+        else UpdateCheck.UpToDate(latest?.tag)
+    } catch (e: HttpStatusException) {
+        UpdateCheck.Failed(Updates.failureReason(e.code, token.isNotBlank()))
+    } catch (e: java.io.IOException) {
+        UpdateCheck.Failed(Updates.failureReason(null, token.isNotBlank()))
+    } catch (e: Exception) {
+        UpdateCheck.Failed("Couldn't read GitHub's answer (${e.message}).")
+    }
 
     suspend fun download(context: Context, release: Release): File {
         val dest = File(context.cacheDir, "updates/truckie-update.apk")

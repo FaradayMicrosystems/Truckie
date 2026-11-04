@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Original drawing: a delivery truck facing right, inside the 66dp safe zone. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <!-- Cargo box -->
+    <path android:fillColor="#FFFFFF" android:pathData="M26,38 h36 v28 h-36 Z" />
+    <!-- Cab -->
+    <path android:fillColor="#FFFFFF" android:pathData="M64,46 h11 l8,10 v10 h-19 Z" />
+    <!-- Window -->
+    <path android:fillColor="#1F4E79" android:pathData="M67,49 h7 l5,6.5 h-12 Z" />
+    <!-- Wheels -->
+    <path android:fillColor="#F2A900" android:pathData="M30,68 a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0 Z" />
+    <path android:fillColor="#F2A900" android:pathData="M67,68 a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0 Z" />
+    <!-- Route tick on the box -->
+    <path android:fillColor="#F2A900" android:pathData="M34,52 l4,-4 l5,5 l10,-10 l4,4 l-14,14 Z" />
+</vector>

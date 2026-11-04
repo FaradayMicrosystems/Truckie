@@ -15,7 +15,7 @@ around Waze's stop limit.
   nearest to that stop, and so on. "Nearest" is **drive time** or **road distance**, chosen in the
   ⋮ menu and shown under the button. Never automatic. Needs location.
 - **Driving loop, one tap per stop:**
-  1. The next stop shows in large type with two pill buttons: blue **Navigate** (left) and green **Delivery completed?** (**Picked up?** for pickups, right).
+  1. The next stop shows in large type with two pill buttons: blue **Navigate** (left) and green **That one's done! Let's ride!** (right, for pickups and deliveries).
   2. Tap it: the stop is struck out into **Done** (tap **Restore** to undo a misclick).
   3. **Navigate to next stop?** counts down 5 seconds. No tap = Yes: Google Maps or Waze opens
      already navigating. **No** keeps you in Truckie.
@@ -27,7 +27,7 @@ around Waze's stop limit.
 
 ### Android Auto
 
-- Car home screen: next stop, **Delivery completed?** / **Picked up?**, **Navigate**, **Undo**, **Stops**.
+- Car home screen: next stop, **That one's done! Let's ride!**, **Navigate**, **Undo**, **Stops**.
 - **Navigate to next stop?** after each stop, auto-yes after 5 seconds.
 - Phone and car share one stop list. Navigation in the car opens Android Auto's default nav app.
 - Add and drag stops on the phone; Android Auto doesn't allow typing or dragging.

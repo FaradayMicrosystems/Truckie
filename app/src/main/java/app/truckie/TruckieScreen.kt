@@ -291,7 +291,7 @@ private fun NextStopCard(state: UiState, onComplete: () -> Unit, navigate: (Stop
                     colors = ButtonDefaults.buttonColors(containerColor = DoneGreen, contentColor = Color.White),
                 ) {
                     Text(
-                        if (next.type == StopType.PICKUP) "Picked up?" else "Delivery completed?",
+                        DONE_LABEL,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center,

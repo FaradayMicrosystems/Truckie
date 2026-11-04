@@ -5,27 +5,29 @@ them in a good order, and hands Google Maps (or Waze) one stop at a time. Google
 Truckie decides where to go next. That stops Google Maps inserting new stops mid-route and gets
 around Waze's stop limit.
 
-## What works in v0.4.1
+## What works in v0.4.2
 
 - **Add stops** by typing an address, `lat,lng`, or pasting a Google Maps link. New stops always
   go on the **end** of the list, in the order you add them. Tick **Pickup** for a pickup.
 - **Hold and drag:** hold a stop for 500 ms until it lifts, drag it to a new place, let go.
   Everything in between shifts by one, so the list stays in sequence.
 - **Optimize** (top bar) chains the stops still to do by road: nearest to you first, then the
-  nearest to that stop, and so on. "Nearest" is **drive time** or **road distance**, chosen in the
-  ⋮ menu and shown under the button. Never automatic. Needs location.
+  nearest to that stop, and so on. "Nearest" means **road distance** (the drive-time option was
+  switched off in v0.4.2 because it gave bad orders). Never automatic. Needs location.
 - **Driving loop, one tap per stop:**
-  1. The next stop shows in large type with two pill buttons: blue **Navigate** (left) and green **Delivery completed?** (**Picked up?** for pickups, right).
+  1. The next stop shows in large type with two pill buttons: blue **Navigate** (left) and green **That one's done! Let's ride!** (right, for pickups and deliveries).
   2. Tap it: the stop is struck out into **Done** (tap **Restore** to undo a misclick).
   3. **Navigate to next stop?** counts down 5 seconds. No tap = Yes: Google Maps or Waze opens
      already navigating. **No** keeps you in Truckie.
 - **Tap a stop** to navigate there, switch pickup/delivery, or remove it.
-- **Menu (⋮):** Google Maps or Waze, optimize by drive time or road distance, **Undo optimize** (back to the order added), check for updates, clear all stops.
+- **Menu (⋮):** Google Maps or Waze, **Undo optimize** (back to the order added), check for updates, clear all stops.
 - **Update check** on launch against this repo's latest GitHub Release: **Update now / Later**.
+  It stays quiet unless there's an update. **⋮ > Check for updates** always says what happened:
+  up to date, no signal, or GitHub refused the token (and what to fix).
 
 ### Android Auto
 
-- Car home screen: next stop, **Delivery completed?** / **Picked up?**, **Navigate**, **Undo**, **Stops**.
+- Car home screen: next stop, **That one's done! Let's ride!**, **Navigate**, **Undo**, **Stops**.
 - **Navigate to next stop?** after each stop, auto-yes after 5 seconds.
 - Phone and car share one stop list. Navigation in the car opens Android Auto's default nav app.
 - Add and drag stops on the phone; Android Auto doesn't allow typing or dragging.
@@ -36,7 +38,7 @@ around Waze's stop limit.
 Switches in `app/src/main/java/app/truckie/Features.kt` turn built features on or off. The full
 route solver (`ROUTE_SOLVER`) and the menu re-order items (`MANUAL_REORDER`) are off.
 
-Not yet: QR scanning from the work PDA (next build), delivery-platform imports, pickup-before-delivery linking.
+Not yet: QR scanning from the work PDA (a later build, waiting on a sample QR code), delivery-platform imports, pickup-before-delivery linking.
 
 ## Long-term goal
 
@@ -57,21 +59,21 @@ key and billing) is a change to `Osrm.kt` and `MainViewModel.optimize()` only.
 
 ## Install
 
-- Newest build of main: https://github.com/FaradayMicrosystems/truckie/releases/download/latest/truckie-debug.apk
-- Versioned releases are on the Releases page as `truckie-vX.Y.apk`.
+- Newest release: https://github.com/FaradayMicrosystems/truckie/releases/latest
+  (download `truckie-vX.Y.apk` under **Assets**).
+- All releases: https://github.com/FaradayMicrosystems/truckie/releases. The `latest` pre-release
+  there holds `truckie-debug.apk`, rebuilt from every push to main (it's briefly missing while a build replaces it).
 
+The repo is private, so these links only work while signed in to GitHub with access to it.
 Open the APK on an Android 8.0+ phone and allow installs from that source when asked.
 
-### One-time setup so updates install over each other
+### Signing (why updates install over each other)
 
-Android only installs an update signed with the same key as the installed app. GitHub's build
-machines make a new throwaway key each time unless you give them one. Do this once:
-
-1. On any computer with Java: `keytool -genkeypair -v -keystore truckie.keystore -alias truckie -keyalg RSA -keysize 2048 -validity 10000`
-2. `base64 -w0 truckie.keystore` (macOS: `base64 -i truckie.keystore`) and copy the output.
-3. In this repo: Settings > Secrets and variables > Actions > New repository secret. Add
-   `TRUCKIE_KEYSTORE_B64` (the base64 text), `KEYSTORE_PASSWORD`, `KEY_ALIAS` (`truckie`) and `KEY_PASSWORD`.
-4. Keep `truckie.keystore` and its passwords somewhere safe. Never commit it.
+Android only installs an update signed with the same key as the installed app. Truckie's one
+permanent key is committed in `signing/` (on purpose: the repo is private), so every build, on
+GitHub or on a computer, signs the same. Builds before v0.4.2 used throwaway keys: uninstall one of
+those once before installing v0.4.2. **If this repo is ever made public, move the key to Actions
+secrets first**, because anyone holding it can sign apps as Truckie.
 
 ### Update check while the repo is private
 

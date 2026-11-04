@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.4.2 — 2026-11-04
+
+- **Check for updates** now says exactly what happened: you're up to date (and which release is
+  the latest), GitHub couldn't be reached, or GitHub refused the update token (with what to fix).
+- The green button now reads **That one's done! Let's ride!** for pickups and deliveries, on the phone and in Android Auto.
+- **Optimize by drive time removed** (hidden, code kept behind `Features.OPTIMIZE_BY_DRIVE_TIME`).
+  It gave bad orders in real use: the free OSRM server has no live traffic, so drive time chases
+  highways and zig-zags. Optimize now always uses **road distance**, and the ⋮ menu toggle is gone.
+- **One permanent signing key** (in `signing/`, private repo), so from now on updates install over
+  the old app. Uninstall a pre-v0.4.2 build once before installing this one.
+- README fixed: install links now point at the Releases page (the old direct link 404s when not
+  signed in to GitHub), the signing steps match how it works now, and the update check is described.
+
 ## v0.4.1 — 2026-11-04
 
 - **Optimize chains by road:** from where you are, it goes to the nearest stop, then from that stop

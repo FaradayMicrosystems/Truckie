@@ -123,12 +123,14 @@ fun TruckieScreen(state: UiState, vm: MainViewModel, navigate: (Stop) -> Unit) {
                                     onClick = { vm.setNavApp(app); menuOpen = false },
                                 )
                             }
-                            HorizontalDivider()
-                            OptimizeBy.entries.forEach { by ->
-                                DropdownMenuItem(
-                                    text = { Text((if (state.optimizeBy == by) "● " else "○ ") + by.label) },
-                                    onClick = { vm.setOptimizeBy(by); menuOpen = false },
-                                )
+                            if (Features.OPTIMIZE_BY_DRIVE_TIME) {
+                                HorizontalDivider()
+                                OptimizeBy.entries.forEach { by ->
+                                    DropdownMenuItem(
+                                        text = { Text((if (state.optimizeBy == by) "● " else "○ ") + by.label) },
+                                        onClick = { vm.setOptimizeBy(by); menuOpen = false },
+                                    )
+                                }
                             }
                             HorizontalDivider()
                             DropdownMenuItem(text = { Text("Undo optimize (order added)") }, onClick = { vm.undoOptimize(); menuOpen = false })
@@ -228,7 +230,13 @@ fun TruckieScreen(state: UiState, vm: MainViewModel, navigate: (Stop) -> Unit) {
         AlertDialog(
             onDismissRequest = {},
             title = { Text("${r.name} is available") },
-            text = { Text(if (state.updateBusy) "Downloading…" else r.notes.ifBlank { "A newer version of Truckie is ready." }.take(600)) },
+            text = {
+                val notes = r.notes.ifBlank { "A newer version of Truckie is ready." }.take(600)
+                // Until the shared signing key is set up, Android refuses to install over the old app.
+                val signing = if (BuildConfig.SHARED_SIGNING_KEY) "" else
+                    "\n\nIf Android says \"App not installed\", uninstall Truckie first, then install the downloaded update. (Your stops list is lost when you uninstall.)"
+                Text(if (state.updateBusy) "Downloading…" else notes + signing)
+            },
             confirmButton = { Button(onClick = vm::downloadAndInstall, enabled = !state.updateBusy) { Text("Update now") } },
             dismissButton = { TextButton(onClick = vm::dismissUpdate, enabled = !state.updateBusy) { Text("Later") } },
         )
@@ -285,7 +293,7 @@ private fun NextStopCard(state: UiState, onComplete: () -> Unit, navigate: (Stop
                     colors = ButtonDefaults.buttonColors(containerColor = DoneGreen, contentColor = Color.White),
                 ) {
                     Text(
-                        if (next.type == StopType.PICKUP) "Picked up?" else "Delivery completed?",
+                        DONE_LABEL,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center,

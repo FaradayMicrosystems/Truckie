@@ -8,6 +8,9 @@ import java.io.File
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
+/** GitHub (or another server) answered, but with an error status. */
+class HttpStatusException(val code: Int, message: String) : IOException(message)
+
 object Http {
     // OSRM, Photon and GitHub all ask for an identifying User-Agent.
     private const val USER_AGENT = "Truckie/${BuildConfig.VERSION_NAME} (Android)"
@@ -23,7 +26,7 @@ object Http {
     suspend fun get(url: String, headers: Map<String, String> = emptyMap()): String = withContext(Dispatchers.IO) {
         client.newCall(request(url, headers)).execute().use { res ->
             val text = res.body?.string().orEmpty()
-            if (!res.isSuccessful) throw IOException("HTTP ${res.code} from ${res.request.url.host}")
+            if (!res.isSuccessful) throw HttpStatusException(res.code, "HTTP ${res.code} from ${res.request.url.host}")
             text
         }
     }
@@ -31,7 +34,7 @@ object Http {
     /** Downloads to [dest]. OkHttp drops the Authorization header if GitHub redirects to its file host. */
     suspend fun download(url: String, dest: File, headers: Map<String, String> = emptyMap()) = withContext(Dispatchers.IO) {
         client.newCall(request(url, headers)).execute().use { res ->
-            if (!res.isSuccessful) throw IOException("HTTP ${res.code} from ${res.request.url.host}")
+            if (!res.isSuccessful) throw HttpStatusException(res.code, "HTTP ${res.code} from ${res.request.url.host}")
             dest.parentFile?.mkdirs()
             res.body!!.byteStream().use { input -> dest.outputStream().use { input.copyTo(it) } }
         }

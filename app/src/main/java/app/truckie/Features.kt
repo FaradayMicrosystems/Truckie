@@ -14,6 +14,12 @@ object Features {
      */
     const val ROUTE_SOLVER = false
 
+    /**
+     * The "Optimize by drive time" choice in the ⋮ menu. Off in v0.4.2: it gave bad orders on the road
+     * (the free OSRM server has no traffic, so it chases highways). Off means Optimize always uses road distance.
+     */
+    const val OPTIMIZE_BY_DRIVE_TIME = false
+
     /** Hold a stop for half a second, then drag it to a new place in the list. */
     const val DRAG_REORDER = true
 

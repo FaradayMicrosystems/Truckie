@@ -14,11 +14,12 @@ import androidx.car.app.model.Template
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import app.truckie.DONE_LABEL
 import app.truckie.StopRepository
 import app.truckie.core.StopType
 import kotlinx.coroutines.launch
 
-/** Car home screen: the next stop, one big "Delivery completed?" button, and Navigate. */
+/** Car home screen: the next stop, one big green "That one's done! Let's ride!" button, and Navigate. */
 class NextStopScreen(carContext: CarContext) : Screen(carContext) {
     private val repo = StopRepository.init(carContext)
     /** The stop just completed from the car, so Undo can restore it. */
@@ -68,7 +69,7 @@ class NextStopScreen(carContext: CarContext) : Screen(carContext) {
             )
             .addAction(
                 Action.Builder()
-                    .setTitle(if (pickup) "Picked up?" else "Delivery completed?")
+                    .setTitle(DONE_LABEL)
                     .setBackgroundColor(CarColor.GREEN)
                     .setOnClickListener { complete(next.id) }
                     .build()

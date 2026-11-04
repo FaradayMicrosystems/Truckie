@@ -8,14 +8,20 @@ plugins {
 
 // Optional settings go in local.properties (not committed). GitHub builds write it from repository secrets:
 //   UPDATE_TOKEN=...       read-only GitHub token, only needed while the repo is private (update check)
-//   KEYSTORE_FILE=...      shared signing key, so each new APK installs over the last one
-//   KEYSTORE_PASSWORD=...  KEY_ALIAS=...  KEY_PASSWORD=...
+//   KEYSTORE_FILE=... KEYSTORE_PASSWORD=... KEY_ALIAS=... KEY_PASSWORD=...  override the key in signing/
 val localProps = Properties().apply {
     val f = rootProject.file("local.properties")
     if (f.exists()) f.inputStream().use { load(it) }
 }
 fun prop(name: String, default: String = "") = localProps.getProperty(name, default)
 fun quoted(name: String, default: String = "") = "\"${prop(name, default)}\""
+
+// Truckie's one permanent signing key lives in signing/ (private repo); local.properties can override it.
+val signingProps = Properties().apply {
+    val f = rootProject.file("signing/signing.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
+}
+fun signProp(name: String): String = prop(name).ifBlank { signingProps.getProperty(name, "") }
 
 android {
     namespace = "app.truckie"
@@ -25,21 +31,28 @@ android {
         applicationId = "app.truckie"
         minSdk = 26
         targetSdk = 35
-        versionCode = 7
-        versionName = "0.4.1"
+        versionCode = 8
+        versionName = "0.4.2"
         buildConfigField("String", "UPDATE_REPO", "\"FaradayMicrosystems/truckie\"")
         // Never commit the token here: it comes from local.properties or the CI secret.
         buildConfigField("String", "UPDATE_TOKEN", quoted("UPDATE_TOKEN"))
     }
 
-    val keystore = prop("KEYSTORE_FILE").takeIf { it.isNotBlank() }?.let { rootProject.file(it) }?.takeIf { it.exists() }
+    // One permanent key, committed in signing/ (private repo), so every build signs the same and
+    // updates install over each other. local.properties can still point at another keystore.
+    val keystore = signProp("KEYSTORE_FILE").takeIf { it.isNotBlank() }?.let { rootProject.file(it) }?.takeIf { it.exists() }
+    defaultConfig {
+        // Lets the app warn about "App not installed" if a build ever falls back to a throwaway key.
+        buildConfigField("boolean", "SHARED_SIGNING_KEY", (keystore != null).toString())
+    }
+
     signingConfigs {
         if (keystore != null) {
             create("shared") {
                 storeFile = keystore
-                storePassword = prop("KEYSTORE_PASSWORD")
-                keyAlias = prop("KEY_ALIAS")
-                keyPassword = prop("KEY_PASSWORD")
+                storePassword = signProp("KEYSTORE_PASSWORD")
+                keyAlias = signProp("KEY_ALIAS")
+                keyPassword = signProp("KEY_PASSWORD")
             }
         }
     }

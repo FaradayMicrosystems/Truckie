@@ -24,7 +24,7 @@ data class UiState(
     val stops: StopList = StopList(),
     val navApp: NavApp = NavApp.GOOGLE_MAPS,
     /** What Optimize compares: road distance or drive time (menu toggle, remembered). */
-    val optimizeBy: OptimizeBy = OptimizeBy.DRIVE_TIME,
+    val optimizeBy: OptimizeBy = OptimizeBy.ROAD_DISTANCE,
     /** Shown while something slow runs, e.g. "Finding address…". */
     val busy: String? = null,
     /** One-line note under the next stop, e.g. the last optimize result or an error. */
@@ -50,8 +50,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         // Changes made from the Android Auto screen show up here.
         viewModelScope.launch { repo.stops.collect { l -> _state.update { it.copy(stops = l) } } }
         viewModelScope.launch {
+            // On launch, only speak up when there is something to install.
             val r = Updater.check()
-            if (r != null) _state.update { it.copy(update = r) }
+            if (r is UpdateCheck.Newer) _state.update { it.copy(update = r.release) }
         }
     }
 
@@ -215,8 +216,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun checkForUpdates() {
         viewModelScope.launch {
-            val r = Updater.check()
-            _state.update { if (r != null) it.copy(update = r) else it.copy(note = "Truckie ${BuildConfig.VERSION_NAME} is the newest version (or GitHub couldn't be reached).") }
+            _state.update { it.copy(note = "Checking GitHub for updates…") }
+            when (val r = Updater.check()) {
+                is UpdateCheck.Newer -> _state.update { it.copy(update = r.release, note = null) }
+                is UpdateCheck.UpToDate -> _state.update {
+                    it.copy(note = "You're up to date: Truckie ${BuildConfig.VERSION_NAME}" + (r.latestTag?.let { t -> " (latest release is $t)." } ?: "."))
+                }
+                is UpdateCheck.Failed -> _state.update { it.copy(note = "Update check failed. ${r.reason}") }
+            }
         }
     }
 

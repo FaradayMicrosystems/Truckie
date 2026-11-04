@@ -16,4 +16,18 @@ object Planner {
         return if (here != null) order.map { open[it - 1].id }
         else listOf(open[0].id) + order.map { open[it].id }
     }
+
+    /**
+     * Optimize as used in v0.2: open stops sorted nearest to farthest from where you are.
+     * [distances] holds the distance from you to each open stop, in the same order as [open].
+     * Stops at the same distance keep the order they were added.
+     */
+    fun nearestFirst(open: List<Stop>, distances: DoubleArray): List<Long> {
+        require(distances.size == open.size) { "One distance per open stop" }
+        return open.indices.sortedBy { distances[it] }.map { open[it].id }
+    }
+
+    /** Straight-line distance from [here] to each open stop, for when there is no road data. */
+    fun straightLineDistances(open: List<Stop>, here: LatLng): DoubleArray =
+        DoubleArray(open.size) { Geo.haversineMeters(here, open[it].location) }
 }

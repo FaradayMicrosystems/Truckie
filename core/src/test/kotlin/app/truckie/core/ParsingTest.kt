@@ -68,6 +68,19 @@ class ParsingTest {
         assertTrue(d[2] > 10000) // null cell filled from straight line
     }
 
+    @Test fun osrmGridByDistanceOrTime() {
+        val pts = listOf(LatLng(-33.0, 151.0), LatLng(-33.0, 151.1))
+        assertTrue(Osrm.gridUrl(pts, OptimizeBy.ROAD_DISTANCE).endsWith("?annotations=distance"))
+        assertTrue(Osrm.gridUrl(pts, OptimizeBy.DRIVE_TIME).endsWith("?annotations=duration"))
+        val json = res("osrm_grid.json")
+        val dist = Osrm.parseGrid(json, pts, OptimizeBy.ROAD_DISTANCE)
+        assertEquals(12000.0, dist[0][1])
+        assertTrue(dist[1][0] > 9000) // null cell: straight-line metres x1.3
+        val time = Osrm.parseGrid(json, pts, OptimizeBy.DRIVE_TIME)
+        assertEquals(700.0, time[0][1])
+        assertEquals(650.0, time[1][0])
+    }
+
     @Test fun updateCheck() {
         val json = res("github_release.json")
         val r = assertNotNull(Updates.newerRelease(json, "0.1"))

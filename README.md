@@ -5,21 +5,22 @@ them in a good order, and hands Google Maps (or Waze) one stop at a time. Google
 Truckie decides where to go next. That stops Google Maps inserting new stops mid-route and gets
 around Waze's stop limit.
 
-## What works in v0.4
+## What works in v0.4.1
 
 - **Add stops** by typing an address, `lat,lng`, or pasting a Google Maps link. New stops always
   go on the **end** of the list, in the order you add them. Tick **Pickup** for a pickup.
 - **Hold and drag:** hold a stop for 500 ms until it lifts, drag it to a new place, let go.
   Everything in between shifts by one, so the list stays in sequence.
-- **Optimize** (top bar) sorts the stops still to do nearest to farthest from your current
-  position, by road distance (straight-line without signal). Never automatic. Needs location.
+- **Optimize** (top bar) chains the stops still to do by road: nearest to you first, then the
+  nearest to that stop, and so on. "Nearest" is **drive time** or **road distance**, chosen in the
+  ⋮ menu and shown under the button. Never automatic. Needs location.
 - **Driving loop, one tap per stop:**
   1. The next stop shows in large type with two pill buttons: blue **Navigate** (left) and green **Delivery completed?** (**Picked up?** for pickups, right).
   2. Tap it: the stop is struck out into **Done** (tap **Restore** to undo a misclick).
   3. **Navigate to next stop?** counts down 5 seconds. No tap = Yes: Google Maps or Waze opens
      already navigating. **No** keeps you in Truckie.
 - **Tap a stop** to navigate there, switch pickup/delivery, or remove it.
-- **Menu (⋮):** Google Maps or Waze, **Undo optimize** (back to the order added), check for updates, clear all stops.
+- **Menu (⋮):** Google Maps or Waze, optimize by drive time or road distance, **Undo optimize** (back to the order added), check for updates, clear all stops.
 - **Update check** on launch against this repo's latest GitHub Release: **Update now / Later**.
 
 ### Android Auto

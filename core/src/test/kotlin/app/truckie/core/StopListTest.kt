@@ -76,6 +76,26 @@ class StopListTest {
         assertEquals(listOf("B"), l.done.map { it.address })
     }
 
+    @Test fun optimizeChainsNearestNext() {
+        // Star sort would visit by distance from here: A(1), B(2), C(3). The chain goes
+        // here -> A, then from A the closest is C, then B.
+        val l = list("A", "B", "C")
+        val m = arrayOf(
+            //            here   A     B     C
+            doubleArrayOf(0.0, 1.0, 2.0, 3.0), // here
+            doubleArrayOf(1.0, 0.0, 9.0, 1.5), // A
+            doubleArrayOf(2.0, 9.0, 0.0, 9.0), // B
+            doubleArrayOf(3.0, 1.5, 9.0, 0.0), // C
+        )
+        assertEquals(listOf(1L, 3L, 2L), Planner.nearestNextOrder(l.open, m))
+    }
+
+    @Test fun nearestNextTiesKeepAddedOrder() {
+        val l = list("A", "B")
+        val m = arrayOf(doubleArrayOf(0.0, 5.0, 5.0), doubleArrayOf(5.0, 0.0, 1.0), doubleArrayOf(5.0, 1.0, 0.0))
+        assertEquals(listOf(1L, 2L), Planner.nearestNextOrder(l.open, m))
+    }
+
     @Test fun jsonRoundTrip() {
         val l = list("A", "B").complete(1, 5).setType(2, StopType.PICKUP)
         assertEquals(l, StopList.fromJson(l.toJson()))

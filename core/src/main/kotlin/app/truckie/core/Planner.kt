@@ -30,4 +30,14 @@ object Planner {
     /** Straight-line distance from [here] to each open stop, for when there is no road data. */
     fun straightLineDistances(open: List<Stop>, here: LatLng): DoubleArray =
         DoubleArray(open.size) { Geo.haversineMeters(here, open[it].location) }
+
+    /**
+     * Optimize from v0.4.1: a chain by road. From [here] go to the nearest open stop, then from
+     * that stop to the nearest one left, and so on. [matrix] is the grid for
+     * `listOf(here) + open.map { it.location }` (metres or seconds; only comparisons matter).
+     */
+    fun nearestNextOrder(open: List<Stop>, matrix: Array<DoubleArray>): List<Long> {
+        require(matrix.size == open.size + 1) { "Grid must cover your position plus every open stop" }
+        return RouteOptimizer.nearestNext(matrix).map { open[it - 1].id }
+    }
 }

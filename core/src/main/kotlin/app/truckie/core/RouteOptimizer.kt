@@ -73,6 +73,16 @@ object RouteOptimizer {
         return c
     }
 
+    /**
+     * Nearest next, used by Optimize from v0.4.1: from index 0 go to the closest stop, then from
+     * there to the closest stop left, and so on. Ties go to the stop added first.
+     * Returns the stop indices 1..n-1 in visiting order.
+     */
+    fun nearestNext(matrix: Array<DoubleArray>): List<Int> {
+        require(matrix.all { it.size == matrix.size }) { "Matrix must be square" }
+        return nearestNeighbour(matrix).drop(1)
+    }
+
     private fun nearestNeighbour(m: Array<DoubleArray>): MutableList<Int> {
         val left = (1 until m.size).toMutableSet()
         val path = mutableListOf(0)

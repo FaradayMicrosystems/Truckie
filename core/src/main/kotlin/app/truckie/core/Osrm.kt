@@ -13,6 +13,25 @@ object Osrm {
             String.format(java.util.Locale.US, "%.6f,%.6f", p.lng, p.lat)
         } + "?annotations=duration"
 
+    /** Full road grid between all points, in metres or seconds depending on [by]. */
+    fun gridUrl(points: List<LatLng>, by: OptimizeBy, base: String = "https://router.project-osrm.org"): String =
+        "$base/table/v1/driving/" + points.joinToString(";") { p ->
+            String.format(java.util.Locale.US, "%.6f,%.6f", p.lng, p.lat)
+        } + "?annotations=" + (if (by == OptimizeBy.ROAD_DISTANCE) "distance" else "duration")
+
+    /**
+     * Parses a [gridUrl] response: metres for ROAD_DISTANCE, seconds for DRIVE_TIME.
+     * Cells OSRM can't route are filled with straight-line estimates in the same unit.
+     */
+    fun parseGrid(json: String, points: List<LatLng>, by: OptimizeBy): Array<DoubleArray> {
+        val res = JSON.decodeFromString(Table.serializer(), json)
+        require(res.code == "Ok") { "OSRM answered ${res.code}" }
+        val g = (if (by == OptimizeBy.ROAD_DISTANCE) res.distances else res.durations) ?: error("OSRM sent no grid")
+        require(g.size == points.size && g.all { it.size == points.size }) { "OSRM grid has the wrong size" }
+        val estimate = Geo.estimateGrid(points, by)
+        return Array(points.size) { i -> DoubleArray(points.size) { j -> g[i][j] ?: estimate[i][j] } }
+    }
+
     /** Road distances from the first point to every point, one row only. */
     fun distancesFromFirstUrl(points: List<LatLng>, base: String = "https://router.project-osrm.org"): String =
         "$base/table/v1/driving/" + points.joinToString(";") { p ->

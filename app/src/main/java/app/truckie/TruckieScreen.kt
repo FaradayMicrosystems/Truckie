@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -24,6 +25,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -33,7 +35,6 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -61,6 +62,7 @@ import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -74,6 +76,8 @@ import sh.calvin.reorderable.rememberReorderableLazyListState
 
 private val Navy = Color(0xFF1F4E79)
 private val Amber = Color(0xFFF2A900)
+private val NavBlue = Color(0xFF1565C0)
+private val DoneGreen = Color(0xFF2E7D32)
 
 @Composable
 fun TruckieTheme(content: @Composable () -> Unit) {
@@ -107,6 +111,8 @@ fun TruckieScreen(state: UiState, vm: MainViewModel, navigate: (Stop) -> Unit) {
                                     onClick = { vm.setNavApp(app); menuOpen = false },
                                 )
                             }
+                            HorizontalDivider()
+                            DropdownMenuItem(text = { Text("Undo optimize (order added)") }, onClick = { vm.undoOptimize(); menuOpen = false })
                             HorizontalDivider()
                             DropdownMenuItem(text = { Text("Check for updates") }, onClick = { vm.checkForUpdates(); menuOpen = false })
                             DropdownMenuItem(text = { Text("Clear all stops…") }, onClick = { confirmClear = true; menuOpen = false })
@@ -239,12 +245,33 @@ private fun NextStopCard(state: UiState, onComplete: () -> Unit, navigate: (Stop
             )
             Text(next.address, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold, maxLines = 3, overflow = TextOverflow.Ellipsis)
             Spacer(Modifier.height(12.dp))
-            Button(onClick = onComplete, modifier = Modifier.fillMaxWidth().height(72.dp)) {
-                Text(if (next.type == StopType.PICKUP) "Picked up?" else "Delivery completed?", fontSize = 22.sp)
-            }
-            Spacer(Modifier.height(8.dp))
-            OutlinedButton(onClick = { navigate(next) }, modifier = Modifier.fillMaxWidth()) {
-                Text("Navigate with ${state.navApp.label}")
+            // Two pill buttons, colour-coded so they can't be mixed up at a glance:
+            // blue Navigate on the left, green done on the right.
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Button(
+                    onClick = { navigate(next) },
+                    modifier = Modifier.weight(1f).height(80.dp),
+                    shape = RoundedCornerShape(percent = 50),
+                    colors = ButtonDefaults.buttonColors(containerColor = NavBlue, contentColor = Color.White),
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("Navigate", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                        Text(state.navApp.label, fontSize = 12.sp)
+                    }
+                }
+                Button(
+                    onClick = onComplete,
+                    modifier = Modifier.weight(1f).height(80.dp),
+                    shape = RoundedCornerShape(percent = 50),
+                    colors = ButtonDefaults.buttonColors(containerColor = DoneGreen, contentColor = Color.White),
+                ) {
+                    Text(
+                        if (next.type == StopType.PICKUP) "Picked up?" else "Delivery completed?",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center,
+                    )
+                }
             }
         }
     }

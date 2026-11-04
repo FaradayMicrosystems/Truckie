@@ -58,14 +58,21 @@ class NextStopScreen(carContext: CarContext) : Screen(carContext) {
                     .addText("Next · ${if (pickup) "Pickup" else "Delivery"} · ${list.open.size} to go")
                     .build()
             )
+            // Same colours as the phone: blue Navigate first (left), green done second (right).
+            .addAction(
+                Action.Builder()
+                    .setTitle("Navigate")
+                    .setBackgroundColor(CarColor.BLUE)
+                    .setOnClickListener { carContext.navigateTo(next) }
+                    .build()
+            )
             .addAction(
                 Action.Builder()
                     .setTitle(if (pickup) "Picked up?" else "Delivery completed?")
-                    .setBackgroundColor(CarColor.PRIMARY)
+                    .setBackgroundColor(CarColor.GREEN)
                     .setOnClickListener { complete(next.id) }
                     .build()
             )
-            .addAction(Action.Builder().setTitle("Navigate").setOnClickListener { carContext.navigateTo(next) }.build())
             .build()
 
         return PaneTemplate.Builder(pane)

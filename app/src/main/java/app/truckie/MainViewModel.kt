@@ -104,6 +104,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun setType(id: Long, type: StopType) = change { it.setType(id, type) }
     fun clearAll() = change { it.cleared() }
 
+    /** "Undo optimize": back to the order the stops were added. */
+    fun undoOptimize() {
+        change { it.inAddedOrder() }
+        _state.update { it.copy(note = "Stops are back in the order you added them.") }
+    }
+
     fun setNavApp(app: NavApp) {
         prefs.navApp = app
         _state.update { it.copy(navApp = app) }

@@ -19,7 +19,7 @@ around Waze's stop limit.
   3. **Navigate to next stop?** counts down 5 seconds. No tap = Yes: Google Maps or Waze opens
      already navigating. **No** keeps you in Truckie.
 - **Tap a stop** to navigate there, switch pickup/delivery, or remove it.
-- **Menu (⋮):** Google Maps or Waze, check for updates, clear all stops.
+- **Menu (⋮):** Google Maps or Waze, **Undo optimize** (back to the order added), check for updates, clear all stops.
 - **Update check** on launch against this repo's latest GitHub Release: **Update now / Later**.
 
 ### Android Auto

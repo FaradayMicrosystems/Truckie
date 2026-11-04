@@ -67,6 +67,15 @@ class StopListTest {
         assertEquals(listOf("near", "mid", "mid again", "far"), l.withOpenOrder(order).names())
     }
 
+    @Test fun undoOptimizeRestoresAddedOrder() {
+        var l = list("A", "B", "C", "D").complete(2, 10)
+        l = l.withOpenOrder(listOf(4, 1, 3)).moveTo(3, 4)
+        assertEquals(listOf("C", "D", "A"), l.names())
+        l = l.inAddedOrder()
+        assertEquals(listOf("A", "C", "D"), l.names())
+        assertEquals(listOf("B"), l.done.map { it.address })
+    }
+
     @Test fun jsonRoundTrip() {
         val l = list("A", "B").complete(1, 5).setType(2, StopType.PICKUP)
         assertEquals(l, StopList.fromJson(l.toJson()))

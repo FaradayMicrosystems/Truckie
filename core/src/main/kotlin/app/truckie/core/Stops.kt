@@ -81,6 +81,12 @@ data class StopList(val stops: List<Stop> = emptyList(), val nextId: Long = 1) {
         return copy(stops = stops.filter { it.isDone } + openIds.map { byId.getValue(it) })
     }
 
+    /**
+     * "Undo optimize": puts the open stops back in the order they were added (ids grow with
+     * each add). This also undoes any dragging. Done stops are untouched.
+     */
+    fun inAddedOrder(): StopList = withOpenOrder(open.map { it.id }.sorted())
+
     /** Clears the whole list for a new day. */
     fun cleared(): StopList = copy(stops = emptyList())
 

@@ -112,6 +112,8 @@ fun TruckieScreen(state: UiState, vm: MainViewModel, navigate: (Stop) -> Unit) {
                                 )
                             }
                             HorizontalDivider()
+                            DropdownMenuItem(text = { Text("Undo optimize (order added)") }, onClick = { vm.undoOptimize(); menuOpen = false })
+                            HorizontalDivider()
                             DropdownMenuItem(text = { Text("Check for updates") }, onClick = { vm.checkForUpdates(); menuOpen = false })
                             DropdownMenuItem(text = { Text("Clear all stops…") }, onClick = { confirmClear = true; menuOpen = false })
                             DropdownMenuItem(text = { Text("Version ${BuildConfig.VERSION_NAME}") }, onClick = { menuOpen = false })

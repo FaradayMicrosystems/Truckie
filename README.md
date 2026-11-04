@@ -5,7 +5,7 @@ them in a good order, and hands Google Maps (or Waze) one stop at a time. Google
 Truckie decides where to go next. That stops Google Maps inserting new stops mid-route and gets
 around Waze's stop limit.
 
-## What works in v0.3
+## What works in v0.4
 
 - **Add stops** by typing an address, `lat,lng`, or pasting a Google Maps link. New stops always
   go on the **end** of the list, in the order you add them. Tick **Pickup** for a pickup.
@@ -14,7 +14,7 @@ around Waze's stop limit.
 - **Optimize** (top bar) sorts the stops still to do nearest to farthest from your current
   position, by road distance (straight-line without signal). Never automatic. Needs location.
 - **Driving loop, one tap per stop:**
-  1. The next stop shows in large type with a big **Delivery completed?** button (**Picked up?** for pickups).
+  1. The next stop shows in large type with two pill buttons: blue **Navigate** (left) and green **Delivery completed?** (**Picked up?** for pickups, right).
   2. Tap it: the stop is struck out into **Done** (tap **Restore** to undo a misclick).
   3. **Navigate to next stop?** counts down 5 seconds. No tap = Yes: Google Maps or Waze opens
      already navigating. **No** keeps you in Truckie.

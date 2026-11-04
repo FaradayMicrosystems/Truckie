@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.4 — 2026-11-04
+
+- The next-stop card now has two big pill buttons side by side, so they're easy to tell apart:
+  - **Navigate** on the left: blue with white text (shows which app it opens).
+  - **Delivery completed?** / **Picked up?** on the right: green.
+- Android Auto uses the same colours and order.
+- "Navigate to next stop?" with the 5-second countdown is unchanged.
+
 ## v0.3.1 — 2026-11-04
 
 - **Fix:** Navigate sent Google Maps / Waze the coordinates Truckie had looked up, and those

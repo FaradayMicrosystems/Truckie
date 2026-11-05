@@ -19,7 +19,7 @@ around Waze's stop limit.
   2. Tap it: the stop is struck out into **Done** (tap **Restore** to undo a misclick).
   3. **Navigate to next stop?** counts down 5 seconds. No tap = Yes: Google Maps or Waze opens
      already navigating. **No** keeps you in Truckie.
-- **Auto-complete on arrival** (v0.5, off until you turn it on in ⋮): stop within 75 m of the
+- **Auto-complete on arrival** (v0.5, off until you turn it on in ⋮): stop within 250 m of the
   next stop for 2 minutes and Truckie does what the green button does, then opens navigation to
   the next stop after 5 seconds. See [Auto-complete on arrival](#auto-complete-on-arrival).
 - **Tap a stop** to navigate there, switch pickup/delivery, or remove it.
@@ -36,8 +36,8 @@ Turn on in **⋮ > Auto-complete on arrival**. A stop is ticked off only when **
 - It is the **next** stop (top of the list). Other stops are never checked, so the house next door can't fire.
 - The vehicle was seen **driving** (15 km/h or faster) since this became the next stop. Opening
   Truckie while already parked, or two stops on one street without moving the truck, needs a tap.
-- A GPS reading accurate to **±30 m or better** puts you inside the **arrival zone** (75 m by
-  default; ⋮ > Arrival zone switches 50 / 75 / 100 m). Less accurate readings are ignored.
+- A GPS reading accurate to **±30 m or better** puts you inside the **arrival zone** (250 m by
+  default for big industrial sites; ⋮ > Arrival zone switches 100 / 150 / 250 m). Less accurate readings are ignored.
 - You stay **under 7 km/h for 2 minutes straight** (walking to the door still counts). Leaving the
   zone or driving off resets the clock to zero.
 
@@ -95,8 +95,9 @@ key and billing) is a change to `Osrm.kt` and `MainViewModel.optimize()` only.
 
 - **Stable** (what drivers should use): https://github.com/FaradayMicrosystems/truckie/releases/latest
   (download `truckie-vX.Y.apk` under **Assets**).
-- **Experimental** (newest work, may break): the newest `vX.Y.Za+N` pre-release on
-  https://github.com/FaradayMicrosystems/truckie/releases.
+- **Experimental** (newest work, may break): always the newest build at
+  https://github.com/FaradayMicrosystems/truckie/releases/download/experimental/truckie-experimental.apk
+  (each build is also kept as its own `vX.Y.Za+N` pre-release).
 
 The repo is private, so these links only work while signed in to GitHub with access to it.
 Open the APK on an Android 8.0+ phone and allow installs from that source when asked.

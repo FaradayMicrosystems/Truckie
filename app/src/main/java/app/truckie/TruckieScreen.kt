@@ -4,6 +4,8 @@ package app.truckie
 
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,6 +15,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -55,7 +58,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -160,7 +165,8 @@ fun TruckieScreen(state: UiState, vm: MainViewModel, navigate: (Stop) -> Unit, a
             )
         },
     ) { pad ->
-        Column(Modifier.padding(pad).fillMaxSize().imePadding()) {
+      Box(Modifier.padding(pad).fillMaxSize()) {
+        Column(Modifier.fillMaxSize().imePadding()) {
             if (state.busy != null) {
                 LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
                 Text(state.busy, Modifier.padding(horizontal = 16.dp, vertical = 4.dp), style = MaterialTheme.typography.bodySmall)
@@ -222,6 +228,8 @@ fun TruckieScreen(state: UiState, vm: MainViewModel, navigate: (Stop) -> Unit, a
                 }
             }
         }
+        if (state.arrivalRunning) GpsBadge(state.arrival, Modifier.align(Alignment.BottomStart).padding(12.dp))
+      }
     }
 
     if (state.askNavigateNext) state.stops.next?.let { next ->
@@ -441,3 +449,46 @@ private fun ArrivalLine(state: UiState) {
     }
     Text(text, Modifier.padding(horizontal = 16.dp, vertical = 2.dp), style = MaterialTheme.typography.bodySmall, color = DoneGreen)
 }
+
+/**
+ * v0.5.3: lower-left GPS indicator for testing auto-complete. Yellow = outside the next stop's
+ * arrival zone, green = inside it. While stopped in the zone it counts down the 2 minutes.
+ */
+@Composable
+private fun GpsBadge(a: ArrivalState, modifier: Modifier = Modifier) {
+    val inside = when (a) {
+        is ArrivalState.Heading -> a.inside
+        is ArrivalState.Waiting, is ArrivalState.Arrived -> true
+        ArrivalState.Idle -> false
+    }
+    val tint = if (inside) GpsGreen else GpsYellow
+    val label = when (a) {
+        is ArrivalState.Waiting -> "%d:%02d".format(a.secondsLeft / 60, a.secondsLeft % 60)
+        is ArrivalState.Arrived -> "Done"
+        is ArrivalState.Heading -> if (a.inside) "In zone" else if (a.metres < 1000) "${a.metres} m" else "%.1f km".format(a.metres / 1000.0)
+        ArrivalState.Idle -> "No fix"
+    }
+    Row(
+        modifier.background(Color(0xCC1B1B1B), RoundedCornerShape(50)).padding(horizontal = 10.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        // "My location" crosshair, not a pin: ring, centre dot and four ticks.
+        Canvas(Modifier.size(22.dp)) {
+            val c = center
+            val r = size.minDimension * 0.30f
+            val w = size.minDimension * 0.09f
+            drawCircle(tint, radius = r, center = c, style = Stroke(width = w))
+            drawCircle(tint, radius = r * 0.45f, center = c)
+            val tick = size.minDimension * 0.5f
+            drawLine(tint, Offset(c.x, c.y - r), Offset(c.x, c.y - tick), w)
+            drawLine(tint, Offset(c.x, c.y + r), Offset(c.x, c.y + tick), w)
+            drawLine(tint, Offset(c.x - r, c.y), Offset(c.x - tick, c.y), w)
+            drawLine(tint, Offset(c.x + r, c.y), Offset(c.x + tick, c.y), w)
+        }
+        Spacer(Modifier.width(6.dp))
+        Text(label, color = tint, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+    }
+}
+
+private val GpsYellow = Color(0xFFFFC400)
+private val GpsGreen = Color(0xFF4CDB5C)

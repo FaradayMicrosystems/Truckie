@@ -12,6 +12,9 @@ first as `vX.Y.Za+<build>` and is listed below as "unreleased" until Aurora call
   `v0.5.3a+28` (alpha of 0.5.3, build 28). Stable installs only ever update to stable releases.
   Experimental installs update to newer a/b/c builds, and to the stable release once it ships.
 - Build numbers come from GitHub, so any newer APK installs over any older one on either channel.
+- **GPS test indicator** (lower left, while auto-complete is on): a small location crosshair that is
+  **yellow** outside the next stop's arrival zone and **green** inside it, with the distance, or the
+  **2:00 countdown** while you're stopped in the zone. Lets you see auto-complete working while testing.
 - The rolling `latest` debug build is retired: the newest experimental pre-release replaces it.
 - The first experimental build went out as `v0.6-exp.27`, numbered wrongly: it is 0.5.3 alpha
   (a behind-the-scenes change is a Z bump). It still updates to the `v0.5.3a+…` builds.

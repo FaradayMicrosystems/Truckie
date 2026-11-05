@@ -29,7 +29,7 @@ sealed interface ArrivalState {
     /** Nothing to watch, or the reading was too poor to use. */
     data object Idle : ArrivalState
     /** Watching [stopId]; [metres] away. Not yet seen driving towards it. */
-    data class Heading(val stopId: Long, val metres: Int) : ArrivalState
+    data class Heading(val stopId: Long, val metres: Int, val inside: Boolean = false) : ArrivalState
     /** Stopped inside the zone; auto-completes in [secondsLeft] unless the vehicle moves. */
     data class Waiting(val stopId: Long, val secondsLeft: Int) : ArrivalState
     /** Stopped inside the zone for the full time: complete [stopId] now. Reported once per arrival. */
@@ -86,7 +86,7 @@ class ArrivalDetector(var rules: ArrivalRules = ArrivalRules()) {
         val stopped = speedKmh != null && speedKmh < rules.stoppedKmh
         if (!inside || !stopped || !drove || firedId == next.id) {
             dwellStart = null
-            return ArrivalState.Heading(next.id, metres.toInt())
+            return ArrivalState.Heading(next.id, metres.toInt(), inside)
         }
         val start = dwellStart ?: fix.timeMillis.also { dwellStart = it }
         val waited = fix.timeMillis - start

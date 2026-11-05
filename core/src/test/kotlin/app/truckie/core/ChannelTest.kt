@@ -15,50 +15,53 @@ class ChannelTest {
     private fun list(vararg r: String) = "[" + r.joinToString(",") + "]"
 
     @Test fun versionNames() {
-        assertTrue(Updates.isExperimental("0.6.0a+27"))
-        assertTrue(Updates.isExperimental("v0.6.0c"))
+        assertTrue(Updates.isExperimental("0.5.3a+27"))
+        assertTrue(Updates.isExperimental("v0.5.3c"))
         assertFalse(Updates.isExperimental("0.5.2"))
-        assertEquals(27, Updates.expBuild("0.6.0a+27"))
+        assertEquals(27, Updates.expBuild("0.5.3a+27"))
         assertNull(Updates.expBuild("0.5.2"))
-        assertEquals(0, Updates.compareVersions("0.6.0a+27", "v0.6.0"))
+        assertEquals(0, Updates.compareVersions("0.5.3a+27", "v0.5.3"))
     }
 
     @Test fun fullOrdering() {
-        val sorted = listOf("0.6.1a+40", "0.6.0", "0.6.0b+31", "0.6.0a+30", "0.6.0a+27", "0.5.2")
+        val sorted = listOf("0.5.4a+40", "0.5.3", "0.5.3b+31", "0.5.3a+30", "0.5.3a+27", "0.5.2")
             .sortedWith { a, b -> Updates.compareFull(a, b) }
-        assertEquals(listOf("0.5.2", "0.6.0a+27", "0.6.0a+30", "0.6.0b+31", "0.6.0", "0.6.1a+40"), sorted)
+        assertEquals(listOf("0.5.2", "0.5.3a+27", "0.5.3a+30", "0.5.3b+31", "0.5.3", "0.5.4a+40"), sorted)
     }
 
     @Test fun experimentalGetsNewerBuild() {
-        val json = list(rel("v0.6.0a+30", true), rel("v0.6.0a+27", true), rel("v0.5.2", false), rel("latest", true))
-        assertEquals("v0.6.0a+30", Updates.newestForExperimental(json, "0.6.0a+27")?.tag)
-        assertNull(Updates.newestForExperimental(json, "0.6.0a+30"))
+        val json = list(rel("v0.5.3a+30", true), rel("v0.5.3a+27", true), rel("v0.5.2", false), rel("latest", true))
+        assertEquals("v0.5.3a+30", Updates.newestForExperimental(json, "0.5.3a+27")?.tag)
+        assertNull(Updates.newestForExperimental(json, "0.5.3a+30"))
     }
 
     @Test fun experimentalGetsBetaAndStable() {
-        val beta = list(rel("v0.6.0b+31", true), rel("v0.6.0a+30", true))
-        assertEquals("v0.6.0b+31", Updates.newestForExperimental(beta, "0.6.0a+30")?.tag)
-        val json = list(rel("v0.6.0", false), rel("v0.6.0c+35", true), rel("v0.5.2", false))
-        assertEquals("v0.6.0", Updates.newestForExperimental(json, "0.6.0c+35")?.tag)
-        // Already moved on to 0.7.0 alpha: the 0.6.0 stable release is older.
-        assertNull(Updates.newestForExperimental(json, "0.7.0a+36"))
+        val beta = list(rel("v0.5.3b+31", true), rel("v0.5.3a+30", true))
+        assertEquals("v0.5.3b+31", Updates.newestForExperimental(beta, "0.5.3a+30")?.tag)
+        val json = list(rel("v0.5.3", false), rel("v0.5.3c+35", true), rel("v0.5.2", false))
+        assertEquals("v0.5.3", Updates.newestForExperimental(json, "0.5.3c+35")?.tag)
+        // Already moved on to 0.5.4 alpha: the 0.5.3 stable release is older.
+        assertNull(Updates.newestForExperimental(json, "0.5.4a+36"))
     }
 
     @Test fun legacyExpBuildStillUpdates() {
-        // v0.6-exp.27 shipped before the X.Y.Z rule; it must still find the a/b/c builds.
+        // v0.6-exp.27 shipped before the X.Y.Z rule (it was really 0.5.3 alpha); it must still
+        // find the 0.5.3a builds, and never be offered v0.5.2 (an older build Android won't install).
         assertTrue(Updates.isExperimental("0.6-exp.27"))
-        val json = list(rel("v0.6.0a+28", true), rel("v0.6-exp.27", true), rel("v0.5.2", false))
-        assertEquals("v0.6.0a+28", Updates.newestForExperimental(json, "0.6-exp.27")?.tag)
-        assertNull(Updates.newestForExperimental(json, "0.6.0a+28"))
+        val json = list(rel("v0.5.3a+28", true), rel("v0.6-exp.27", true), rel("v0.5.2", false))
+        assertEquals("v0.5.3a+28", Updates.newestForExperimental(json, "0.6-exp.27")?.tag)
+        assertNull(Updates.newestForExperimental(json, "0.5.3a+28"))
+        assertNull(Updates.newestForExperimental(list(rel("v0.5.2", false)), "0.6-exp.27"))
+        assertEquals("v0.5.3", Updates.newestForExperimental(list(rel("v0.5.3", false)), "0.6-exp.27")?.tag)
     }
 
     @Test fun skipsReleasesWithoutApk() {
-        val json = list(rel("v0.6.0a+31", true, apk = false), rel("v0.6.0a+30", true))
-        assertEquals("v0.6.0a+30", Updates.newestForExperimental(json, "0.6.0a+27")?.tag)
+        val json = list(rel("v0.5.3a+31", true, apk = false), rel("v0.5.3a+30", true))
+        assertEquals("v0.5.3a+30", Updates.newestForExperimental(json, "0.5.3a+27")?.tag)
     }
 
     @Test fun stableChannelIgnoresPreReleases() {
         // /releases/latest never returns a pre-release, and latest() rejects one anyway.
-        assertNull(Updates.latest(rel("v0.6.0a+30", true)))
+        assertNull(Updates.latest(rel("v0.5.3a+30", true)))
     }
 }

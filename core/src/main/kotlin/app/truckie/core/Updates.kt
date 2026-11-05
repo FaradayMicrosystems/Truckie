@@ -17,18 +17,21 @@ object Updates {
     /**
      * Aurora's versions: X.Y.Z (X primary releases, Y user-visible changes and features, Z minor
      * fixes and looks) plus an optional letter: a alpha, b beta, c release candidate. Builds from the
-     * experimental branch carry a letter and a build counter after "+", like "0.6.0a+27".
+     * experimental branch carry a letter and a build counter after "+", like "0.5.3a+27".
      */
     fun isExperimental(version: String) = PRE.containsMatchIn(version.trim()) || version.contains("-exp")
 
-    /** The build counter after "+" ("0.6.0a+27" is 27), or null. */
+    /** The build counter after "+" ("0.5.3a+27" is 27), or null. */
     fun expBuild(version: String): Int? = BUILD.find(version.trim())?.groupValues?.get(1)?.toIntOrNull()
 
     /**
      * Full ordering: numbers first, then a < b < c < stable at the same numbers, then the build counter.
-     * So 0.6.0a+27 < 0.6.0a+30 < 0.6.0b+31 < 0.6.0 < 0.6.1a+40.
+     * So 0.5.3a+27 < 0.5.3a+30 < 0.5.3b+31 < 0.5.3 < 0.5.4a+40.
      */
     fun compareFull(a: String, b: String): Int {
+        // The only build with the old naming, v0.6-exp.27, really sat between v0.5.2 and v0.5.3.
+        if (isLegacy(a) || isLegacy(b)) return legacyRank(a).compareTo(legacyRank(b)).takeIf { it != 0 }
+            ?: (expBuild(a) ?: legacyBuild(a)).compareTo(expBuild(b) ?: legacyBuild(b))
         val byNumbers = compareVersions(a, b)
         if (byNumbers != 0) return byNumbers
         val byStage = stage(a).compareTo(stage(b))
@@ -38,7 +41,7 @@ object Updates {
 
     /**
      * Experimental channel: the newest release worth offering to [currentVersion], or null. Newer
-     * a/b/c builds count, and so does the stable release once it ships (0.6.0 beats 0.6.0c+35).
+     * a/b/c builds count, and so does the stable release once it ships (0.5.3 beats 0.5.3c+35).
      * Stable installs never call this, so they never see experimental builds.
      */
     fun newestForExperimental(json: String, currentVersion: String): Release? =
@@ -50,10 +53,19 @@ object Updates {
             Release(r.tagName, r.name ?: r.tagName, r.body.orEmpty(), apk.name, apk.url, apk.browserDownloadUrl)
         }.maxWithOrNull { a, b -> compareFull(a.tag, b.tag) }
 
-    /** Legacy "0.6-exp.27" (the first experimental build) = 0, a = 1, b = 2, c = 3, no letter (stable) = 4. */
+    /** a = 1, b = 2, c = 3, no letter (stable) = 4. */
     private fun stage(v: String): Int = when (PRE.find(v.trim())?.groupValues?.get(1)) {
-        "a" -> 1; "b" -> 2; "c" -> 3
-        else -> if (v.contains("-exp")) 0 else 4
+        "a" -> 1; "b" -> 2; "c" -> 3; else -> 4
+    }
+
+    private fun isLegacy(v: String) = v.contains("-exp")
+    private fun legacyBuild(v: String) = v.substringAfterLast('.').toIntOrNull() ?: 0
+
+    /** 0 = up to v0.5.2, 1 = the legacy -exp build, 2 = v0.5.3 and later (alphas included). */
+    private fun legacyRank(v: String): Int = when {
+        isLegacy(v) -> 1
+        compareVersions(v, "0.5.3") >= 0 -> 2
+        else -> 0
     }
 
     private val PRE = Regex("""^v?\d+(?:\.\d+)*([abc])(?:\+\d+)?$""")
@@ -81,7 +93,7 @@ object Updates {
         else -> "GitHub answered with error $httpStatus. Try again later."
     }
 
-    /** Compares "v0.1", "0.1.2", "v1.0-beta", "0.6.0a+27" by their numbers: negative, zero or positive. */
+    /** Compares "v0.1", "0.1.2", "v1.0-beta", "0.5.3a+27" by their numbers: negative, zero or positive. */
     fun compareVersions(a: String, b: String): Int {
         val x = numbers(a)
         val y = numbers(b)

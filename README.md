@@ -133,14 +133,15 @@ fixes and cosmetic tweaks (colours, design, logo). An optional letter marks a pr
 
 | Branch | `baseVersionName` in `app/build.gradle.kts` | Each push publishes | Who gets it |
 |---|---|---|---|
-| `main` | `"0.6.0"` | full release `v0.6.0` (`truckie-v0.6.0.apk`) | stable installs |
-| `experimental` | `"0.7.0a"` (or `b`, `c`) | pre-release `v0.7.0a+<build>` | experimental installs |
+| `main` | `"0.5.3"` | full release `v0.5.3` (`truckie-v0.5.3.apk`) | stable installs |
+| `experimental` | `"0.5.4a"` (or `b`, `c`) | pre-release `v0.5.4a+<build>` | experimental installs |
 
 - **All new work** goes in a PR to `experimental` (the default branch). Its CHANGELOG section reads
-  `## v0.7.0 — unreleased (experimental)`.
+  `## v0.5.4 — unreleased (experimental)`.
 - **Full release** (only when Aurora says so): a PR from `experimental` to `main` that drops the
-  letter ("0.7.0") and dates the CHANGELOG heading. Merging it publishes `v0.7.0`. Then
-  `experimental` moves on to the next version with a letter.
+  letter ("0.5.4") and dates the CHANGELOG heading. Merging it publishes `v0.5.4`. Then
+  `experimental` moves on to the next version with a letter. The next number depends on the change:
+  Z for fixes and behind-the-scenes work, Y for features users notice.
 - `versionCode` is GitHub's build number (the `+<build>`), so every new APK installs over every older one.
 - The in-app update check follows the install's channel: stable installs only see full releases;
   experimental installs see newer a/b/c builds and the matching stable release.

@@ -47,9 +47,9 @@ jobs:
           if-no-files-found: error
 
       # Release channels (see README "Releases"):
-      #   main          stable. Its version ("0.6.0") publishes as the full release v0.6.0, which the in-app
+      #   main          stable. Its version ("0.5.3") publishes as the full release v0.5.3, which the in-app
       #                 update check on stable installs finds. main never carries an a/b/c letter.
-      #   experimental  every push publishes a pre-release v0.6.0a+<build> (a alpha, b beta, c release
+      #   experimental  every push publishes a pre-release v0.5.3a+<build> (a alpha, b beta, c release
       #                 candidate). Stable installs never see these.
       - name: Publish release
         if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/experimental') && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
@@ -66,7 +66,7 @@ jobs:
           printf '\n%s\n' "$BUILD_STATUS" >> notes.md
 
           if [ "$BRANCH" = "experimental" ]; then
-            case "$BASE" in *[abc]) ;; *) echo "::error::experimental must build an a/b/c version (e.g. 0.6.0a), found $BASE"; exit 1 ;; esac
+            case "$BASE" in *[abc]) ;; *) echo "::error::experimental must build an a/b/c version (e.g. 0.5.3a), found $BASE"; exit 1 ;; esac
             TAG="v$BASE+$GITHUB_RUN_NUMBER"
             APK="truckie-v$BASE-build$GITHUB_RUN_NUMBER.apk"   # no "+" in file names
             cp app/build/outputs/apk/debug/app-debug.apk "$APK"

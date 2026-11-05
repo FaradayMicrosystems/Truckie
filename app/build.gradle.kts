@@ -17,10 +17,11 @@ fun prop(name: String, default: String = "") = localProps.getProperty(name, defa
 fun quoted(name: String, default: String = "") = "\"${prop(name, default)}\""
 
 // The version this branch builds, Aurora's X.Y.Z rule: X primary releases, Y user-visible changes
-// and features, Z minor fixes and looks. main: stable, no letter ("0.6.0"). experimental: the next
-// version plus a (alpha), b (beta) or c (release candidate), e.g. "0.6.0a".
+// and features, Z minor fixes and looks. main: stable, no letter ("0.5.3"). experimental: the next
+// version plus a (alpha), b (beta) or c (release candidate), e.g. "0.5.3a". Pick the next number
+// from what the change is (Z for fixes and behind-the-scenes, Y for features users notice).
 // CI reads this line, so keep it as one plain string.
-val baseVersionName = "0.6.0a"
+val baseVersionName = "0.5.3a"
 
 // GitHub Actions' run number: always rising, across both branches.
 val ciBuild: Int? = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull()?.takeIf { it > 11 }
@@ -40,7 +41,7 @@ android {
         applicationId = "app.truckie"
         minSdk = 26
         targetSdk = 35
-        // GitHub builds of experimental add their build counter ("0.6.0a+31"), and every GitHub build
+        // GitHub builds of experimental add their build counter ("0.5.3a+31"), and every GitHub build
         // uses it as versionCode, so each new APK installs over every older one on either channel.
         versionCode = ciBuild ?: 11
         versionName = if (baseVersionName.last() in "abc" && ciBuild != null) "$baseVersionName+$ciBuild" else baseVersionName

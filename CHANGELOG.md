@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.5 — 2026-11-05
+
+- **Auto-complete on arrival** (⋮ menu, off by default). Stopped within 75 m of the next stop for
+  2 minutes = the same as tapping **That one's done! Let's ride!**: the stop is struck out and
+  navigation to the next stop opens after 5 seconds.
+  - Never fires early: only the next stop is watched, the vehicle must have driven (15 km/h+)
+    towards it first, GPS readings worse than ±30 m are ignored, and moving faster than 7 km/h or
+    leaving the zone resets the 2-minute clock.
+  - **Undo** on the notification puts the stop back, and it won't fire again until you drive off.
+  - **Arrival zone** 50 / 75 / 100 m in the ⋮ menu.
+  - **Open Maps by itself** (⋮ menu, Android's "Display over other apps") lets Truckie open the next
+    stop while Maps is in front. Without it, tap **Navigate** on the notification.
+  - Android Auto: the car screen shows **Navigate to next stop?**, and the Done alert shows on the car screen.
+  - A small "Auto-complete is on" notification shows while it watches GPS, with **Turn off**.
+- Truckie now asks for notification permission (Android 13+) for the Undo alert.
+
 ## v0.4.2 — 2026-11-04
 
 - **Check for updates** now says exactly what happened: you're up to date (and which release is

@@ -14,6 +14,7 @@ import androidx.car.app.model.Template
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import app.truckie.Arrivals
 import app.truckie.DONE_LABEL
 import app.truckie.StopRepository
 import app.truckie.core.StopType
@@ -30,6 +31,14 @@ class NextStopScreen(carContext: CarContext) : Screen(carContext) {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 repo.stops.collect { invalidate() }
+            }
+        }
+        // Auto-complete on arrival: same as the green button, so offer "Navigate to next stop?" (auto-yes in 5 s).
+        lifecycleScope.launch {
+            Arrivals.completed.collect { id ->
+                lastDoneId = id
+                repo.stops.value.next?.let { screenManager.push(NavigateNextScreen(carContext, it)) }
+                invalidate()
             }
         }
     }

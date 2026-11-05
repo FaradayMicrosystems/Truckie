@@ -5,7 +5,7 @@ them in a good order, and hands Google Maps (or Waze) one stop at a time. Google
 Truckie decides where to go next. That stops Google Maps inserting new stops mid-route and gets
 around Waze's stop limit.
 
-## What works in v0.4.2
+## What works in v0.5
 
 - **Add stops** by typing an address, `lat,lng`, or pasting a Google Maps link. New stops always
   go on the **end** of the list, in the order you add them. Tick **Pickup** for a pickup.
@@ -19,17 +19,51 @@ around Waze's stop limit.
   2. Tap it: the stop is struck out into **Done** (tap **Restore** to undo a misclick).
   3. **Navigate to next stop?** counts down 5 seconds. No tap = Yes: Google Maps or Waze opens
      already navigating. **No** keeps you in Truckie.
+- **Auto-complete on arrival** (v0.5, off until you turn it on in ⋮): stop within 75 m of the
+  next stop for 2 minutes and Truckie does what the green button does, then opens navigation to
+  the next stop after 5 seconds. See [Auto-complete on arrival](#auto-complete-on-arrival).
 - **Tap a stop** to navigate there, switch pickup/delivery, or remove it.
-- **Menu (⋮):** Google Maps or Waze, **Undo optimize** (back to the order added), check for updates, clear all stops.
+- **Menu (⋮):** Google Maps or Waze, **Auto-complete on arrival** (with arrival zone and
+  **Open Maps by itself**), **Undo optimize** (back to the order added), check for updates, clear all stops.
 - **Update check** on launch against this repo's latest GitHub Release: **Update now / Later**.
   It stays quiet unless there's an update. **⋮ > Check for updates** always says what happened:
   up to date, no signal, or GitHub refused the token (and what to fix).
+
+### Auto-complete on arrival
+
+Turn on in **⋮ > Auto-complete on arrival**. A stop is ticked off only when **all** of these hold:
+
+- It is the **next** stop (top of the list). Other stops are never checked, so the house next door can't fire.
+- The vehicle was seen **driving** (15 km/h or faster) since this became the next stop. Opening
+  Truckie while already parked, or two stops on one street without moving the truck, needs a tap.
+- A GPS reading accurate to **±30 m or better** puts you inside the **arrival zone** (75 m by
+  default; ⋮ > Arrival zone switches 50 / 75 / 100 m). Less accurate readings are ignored.
+- You stay **under 7 km/h for 2 minutes straight** (walking to the door still counts). Leaving the
+  zone or driving off resets the clock to zero.
+
+Then: the stop is struck out, a notification says **Done: <address>** with **Undo** and
+**Navigate**, and navigation to the next stop opens after 5 seconds. Undo puts the stop back, and
+it won't auto-complete again until you've driven out of its zone. **Restore** under Done works too.
+
+- **Background:** watching starts when you open Truckie or tap Navigate, with a "Auto-complete is
+  on" notification (Android requires it) that says what it sees, e.g. "Stopped at 12 Smith St: done
+  in 1:20 unless you move". **Turn off** is on that notification. It stops by itself when no stops are left.
+  Only "while using the app" location is needed. GPS is checked every 5 s near the stop and every
+  30 s when more than 1.5 km away.
+- **Open Maps by itself:** Android blocks a background app from opening Maps. Turn on **⋮ > Open
+  Maps by itself** (Android's "Display over other apps" switch for Truckie) and the next stop opens
+  hands-free. Without it, the notification's **Navigate** button is one tap.
+- **Pins:** a stop's position comes from the address search. If the pin is more than the zone away
+  from where you park, the stop simply won't auto-complete: tap the green button as usual.
 
 ### Android Auto
 
 - Car home screen: next stop, **That one's done! Let's ride!**, **Navigate**, **Undo**, **Stops**.
 - **Navigate to next stop?** after each stop, auto-yes after 5 seconds.
 - Phone and car share one stop list. Navigation in the car opens Android Auto's default nav app.
+- **Auto-complete on arrival** works in the car too: the car screen shows **Navigate to next stop?**
+  (auto-yes after 5 s) when Truckie is on the car screen. While Maps is on the car screen, the
+  **Done** alert pops up there with **Navigate** and **Undo** buttons.
 - Add and drag stops on the phone; Android Auto doesn't allow typing or dragging.
 - **To see Truckie in the car** (sideloaded apps are hidden by default): open Android Auto settings
   on the phone, tap **Version** about 10 times to unlock developer settings, then in the ⋮ menu >
@@ -99,6 +133,6 @@ which is what the in-app update check finds.
 ## Project layout
 
 - `core/` — plain Kotlin, no Android: stop list rules, route optimizer, OSRM and Photon parsing,
-  navigation links, version check. Unit-tested.
+  navigation links, version check, arrival detection (`Arrival.kt`). Unit-tested.
 - `app/` — Android app (Kotlin, Jetpack Compose): screen, address lookup, hand-off, updater.
-  `app/.../car/` holds the Android Auto screens (car app library).
+  `ArrivalService.kt` watches GPS for auto-complete. `app/.../car/` holds the Android Auto screens (car app library).

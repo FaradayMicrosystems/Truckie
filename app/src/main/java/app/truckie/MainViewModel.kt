@@ -3,6 +3,8 @@ package app.truckie
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import app.truckie.core.ArrivalRules
+import app.truckie.core.ArrivalState
 import app.truckie.core.Geo
 import app.truckie.core.NavApp
 import app.truckie.core.OptimizeBy
@@ -36,6 +38,14 @@ data class UiState(
     val askNavigateNext: Boolean = false,
     val update: Release? = null,
     val updateBusy: Boolean = false,
+    /** Auto-complete on arrival (⋮ menu, remembered). */
+    val autoComplete: Boolean = false,
+    val arrivalRadiusM: Int = ArrivalRules.DEFAULT_RADIUS_M,
+    /** What the arrival watcher sees right now, shown under the next stop. */
+    val arrival: ArrivalState = ArrivalState.Idle,
+    val arrivalRunning: Boolean = false,
+    /** "Display over other apps" is on, so Truckie can open Maps to the next stop by itself. */
+    val canOpenMaps: Boolean = false,
 )
 
 class MainViewModel(app: Application) : AndroidViewModel(app) {
@@ -43,12 +53,37 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private val prefs = Prefs(app)
     private val places = Places(app)
 
-    private val _state = MutableStateFlow(UiState(stops = repo.stops.value, navApp = prefs.navApp, optimizeBy = prefs.optimizeBy))
+    private val _state = MutableStateFlow(
+        UiState(
+            stops = repo.stops.value, navApp = prefs.navApp, optimizeBy = prefs.optimizeBy,
+            autoComplete = prefs.autoComplete, arrivalRadiusM = prefs.arrivalRadiusM,
+            canOpenMaps = ArrivalService.canOpenNavigationFromBackground(app),
+        )
+    )
     val state: StateFlow<UiState> = _state
 
     init {
         // Changes made from the Android Auto screen show up here.
         viewModelScope.launch { repo.stops.collect { l -> _state.update { it.copy(stops = l) } } }
+        viewModelScope.launch { Arrivals.status.collect { a -> _state.update { it.copy(arrival = a) } } }
+        viewModelScope.launch { Arrivals.running.collect { r -> _state.update { it.copy(arrivalRunning = r) } } }
+        // Auto-completed while the phone screen is up: same as the green button, so show the 5-second countdown here.
+        viewModelScope.launch {
+            Arrivals.completed.collect { id ->
+                // In the car, the car screen shows the countdown instead (so navigation isn't opened twice).
+                if (!Arrivals.phoneVisible || Arrivals.carConnected) return@collect
+                val list = repo.stops.value
+                val done = list.stops.firstOrNull { it.id == id } ?: return@collect
+                val next = list.next
+                _state.update {
+                    it.copy(
+                        askNavigateNext = next != null,
+                        note = "Auto-completed ${done.address} (stopped there 2 min). Wrong? Tap Restore under Done." +
+                            if (next == null) " All stops done. Good on ya!" else "",
+                    )
+                }
+            }
+        }
         viewModelScope.launch {
             // On launch, only speak up when there is something to install.
             val r = Updater.check()
@@ -117,6 +152,41 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun setNavApp(app: NavApp) {
         prefs.navApp = app
         _state.update { it.copy(navApp = app) }
+    }
+
+    // --- Auto-complete on arrival (v0.5) ---
+
+    fun setAutoComplete(on: Boolean) {
+        val ctx = getApplication<Application>()
+        prefs.autoComplete = on
+        _state.update { it.copy(autoComplete = on) }
+        if (!on) {
+            ArrivalService.stop(ctx)
+            _state.update { it.copy(note = "Auto-complete is off. Tap the green button at each stop.") }
+            return
+        }
+        val started = ArrivalService.startIfWanted(ctx)
+        val note = when {
+            !ArrivalService.hasLocationPermission(ctx) -> "Auto-complete needs precise location. Allow it for Truckie in Android settings."
+            !started && _state.value.stops.next == null -> "Auto-complete is on. It starts watching when you have a stop to do."
+            !started -> "Auto-complete is on, but couldn't start. Close and reopen Truckie."
+            else -> "Auto-complete is on: stop within ${prefs.arrivalRadiusM} m of the next stop for 2 minutes and it's ticked off."
+        }
+        _state.update { it.copy(note = note) }
+    }
+
+    /** Arrival zone: 50 → 75 → 100 → 50 m. */
+    fun cycleArrivalRadius() {
+        val choices = ArrivalRules.RADIUS_CHOICES
+        val r = choices[(choices.indexOf(prefs.arrivalRadiusM) + 1) % choices.size]
+        prefs.arrivalRadiusM = r
+        _state.update { it.copy(arrivalRadiusM = r, note = "Arrival zone is now $r m around each stop.") }
+    }
+
+    /** Re-reads settings changed outside the app (e.g. "Display over other apps", or Turn off from the notification). */
+    fun refreshArrivalSettings() {
+        val ctx = getApplication<Application>()
+        _state.update { it.copy(autoComplete = prefs.autoComplete, canOpenMaps = ArrivalService.canOpenNavigationFromBackground(ctx)) }
     }
 
     fun setOptimizeBy(by: OptimizeBy) {

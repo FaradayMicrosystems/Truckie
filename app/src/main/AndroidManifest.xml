@@ -4,6 +4,12 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <!-- Auto-complete on arrival (v0.5): GPS keeps running while Maps is on screen, with a notification. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- "Open Maps by itself": lets Truckie open navigation to the next stop while Maps is in front. -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <!-- Lets "Update now" open Android's installer for the downloaded APK. -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
@@ -55,6 +61,17 @@
                 <category android:name="androidx.car.app.category.POI" />
             </intent-filter>
         </service>
+
+        <!-- Auto-complete on arrival: watches GPS while you drive. -->
+        <service
+            android:name=".ArrivalService"
+            android:exported="false"
+            android:foregroundServiceType="location" />
+
+        <!-- Undo / Turn off buttons on the arrival notifications. -->
+        <receiver
+            android:name=".ArrivalActionReceiver"
+            android:exported="false" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

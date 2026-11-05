@@ -21,7 +21,7 @@ fun quoted(name: String, default: String = "") = "\"${prop(name, default)}\""
 // version plus a (alpha), b (beta) or c (release candidate), e.g. "0.5.3a". Pick the next number
 // from what the change is (Z for fixes and behind-the-scenes, Y for features users notice).
 // CI reads this line, so keep it as one plain string.
-val baseVersionName = "0.5.3a"
+val baseVersionName = "0.5.3e"
 
 // GitHub Actions' run number: always rising, across both branches.
 val ciBuild: Int? = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull()?.takeIf { it > 11 }
@@ -44,7 +44,7 @@ android {
         // GitHub builds of experimental add their build counter ("0.5.3a+31"), and every GitHub build
         // uses it as versionCode, so each new APK installs over every older one on either channel.
         versionCode = ciBuild ?: 11
-        versionName = if (baseVersionName.last() in "abc" && ciBuild != null) "$baseVersionName+$ciBuild" else baseVersionName
+        versionName = if (baseVersionName.last() in "abce" && ciBuild != null) "$baseVersionName+$ciBuild" else baseVersionName
         buildConfigField("String", "UPDATE_REPO", "\"FaradayMicrosystems/truckie\"")
         // Never commit the token here: it comes from local.properties or the CI secret.
         buildConfigField("String", "UPDATE_TOKEN", quoted("UPDATE_TOKEN"))

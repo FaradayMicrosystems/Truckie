@@ -96,8 +96,9 @@ key and billing) is a change to `Osrm.kt` and `MainViewModel.optimize()` only.
 - **Stable** (what drivers should use): https://github.com/FaradayMicrosystems/truckie/releases/latest
   (download `truckie-vX.Y.apk` under **Assets**).
 - **Experimental** (newest work, may break): always the newest build at
-  https://github.com/FaradayMicrosystems/truckie/releases/download/experimental/truckie-experimental.apk
-  (each build is also kept as its own `vX.Y.Za+N` pre-release).
+  https://github.com/FaradayMicrosystems/truckie/releases/tag/experimental
+  The page holds one APK, named with its version (e.g. `truckie-v0.5.3e-build40.apk`), and the same
+  version shows in the app. Each build is also kept as its own `vX.Y.Ze+N` pre-release.
 
 The repo is private, so these links only work while signed in to GitHub with access to it.
 Open the APK on an Android 8.0+ phone and allow installs from that source when asked.
@@ -129,23 +130,24 @@ and `./gradlew :core:test` for the unit tests.
 
 **Version numbers (X.Y.Z, always three digits):** X = primary releases only. Y = changes users
 will notice: features, experimental features, anything that changes how Truckie works. Z = minor
-fixes and cosmetic tweaks (colours, design, logo). An optional letter marks a pre-release:
-**a** alpha, **b** beta, **c** release candidate.
+fixes and cosmetic tweaks (colours, design, logo). Experimental builds carry the letter
+**e** (experimental), e.g. `0.5.3e`; stable releases carry no letter. (Builds before 0.5.3e+40 used
+a alpha, b beta, c release candidate; they still update normally.)
 
 | Branch | `baseVersionName` in `app/build.gradle.kts` | Each push publishes | Who gets it |
 |---|---|---|---|
 | `main` | `"0.5.3"` | full release `v0.5.3` (`truckie-v0.5.3.apk`) | stable installs |
-| `experimental` | `"0.5.4a"` (or `b`, `c`) | pre-release `v0.5.4a+<build>` | experimental installs |
+| `experimental` | `"0.5.4e"` | pre-release `v0.5.4e+<build>` (`truckie-v0.5.4e-build<build>.apk`) | experimental installs |
 
 - **All new work** goes in a PR to `experimental` (the default branch). Its CHANGELOG section reads
   `## v0.5.4 — unreleased (experimental)`.
 - **Full release** (only when Aurora says so): a PR from `experimental` to `main` that drops the
   letter ("0.5.4") and dates the CHANGELOG heading. Merging it publishes `v0.5.4`. Then
-  `experimental` moves on to the next version with a letter. The next number depends on the change:
+  `experimental` moves on to the next version with the e letter. The next number depends on the change:
   Z for fixes and behind-the-scenes work, Y for features users notice.
 - `versionCode` is GitHub's build number (the `+<build>`), so every new APK installs over every older one.
 - The in-app update check follows the install's channel: stable installs only see full releases;
-  experimental installs see newer a/b/c builds and the matching stable release.
+  experimental installs see newer e builds and the matching stable release.
 
 ## Project layout
 

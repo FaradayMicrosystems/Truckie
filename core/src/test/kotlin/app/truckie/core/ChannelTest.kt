@@ -64,4 +64,15 @@ class ChannelTest {
         // /releases/latest never returns a pre-release, and latest() rejects one anyway.
         assertNull(Updates.latest(rel("v0.5.3a+30", true)))
     }
+
+    @Test
+    fun experimentalLetterE() {
+        assertTrue(Updates.isExperimental("0.5.3e+40"))
+        assertEquals(40, Updates.expBuild("v0.5.3e+40"))
+        // An old alpha install is offered the new e build; e sits below the stable release.
+        val json = list(rel("v0.5.3e+40", true), rel("v0.5.3a+39", true), rel("v0.5.2", false))
+        assertEquals("v0.5.3e+40", Updates.newestForExperimental(json, "0.5.3a+39")?.tag)
+        assertTrue(Updates.compareFull("0.5.3e+40", "0.5.3") < 0)
+        assertTrue(Updates.compareFull("0.5.3a+39", "0.5.3e+40") < 0)
+    }
 }

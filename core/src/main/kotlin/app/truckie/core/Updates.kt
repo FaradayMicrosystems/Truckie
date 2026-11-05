@@ -14,38 +14,62 @@ object Updates {
     /** Newest releases first, pre-releases included (the experimental channel reads this). */
     fun releasesUrl(repo: String) = "https://api.github.com/repos/$repo/releases?per_page=30"
 
-    /** Experimental builds are named like "0.6-exp.27" (next version, "-exp", GitHub build number). */
-    fun isExperimental(version: String) = version.contains("-exp")
+    /**
+     * Aurora's versions: X.Y.Z (X primary releases, Y user-visible changes and features, Z minor
+     * fixes and looks) plus an optional letter: a alpha, b beta, c release candidate. Builds from the
+     * experimental branch carry a letter and a build counter after "+", like "0.5.3a+27".
+     */
+    fun isExperimental(version: String) = PRE.containsMatchIn(version.trim()) || version.contains("-exp")
 
-    /** The build number at the end of "0.6-exp.27", or null for a stable version. */
-    fun expBuild(version: String): Int? = EXP.find(version.trim())?.groupValues?.get(1)?.toIntOrNull()
+    /** The build counter after "+" ("0.5.3a+27" is 27), or null. */
+    fun expBuild(version: String): Int? = BUILD.find(version.trim())?.groupValues?.get(1)?.toIntOrNull()
 
     /**
-     * Experimental channel: the newest release worth offering to [currentVersion] (an -exp build), or null.
-     * Newer experimental builds count, and so does the stable release of the same version or later
-     * (v0.6 is newer than v0.6-exp.27). Stable installs never call this, so they never see experimental builds.
+     * Full ordering: numbers first, then a < b < c < stable at the same numbers, then the build counter.
+     * So 0.5.3a+27 < 0.5.3a+30 < 0.5.3b+31 < 0.5.3 < 0.5.4a+40.
      */
-    fun newestForExperimental(json: String, currentVersion: String): Release? {
-        val mine = expBuild(currentVersion) ?: 0
-        val newer = JSON.decodeFromString(ListSerializer(GhRelease.serializer()), json).mapNotNull { r ->
-            if (r.draft) return@mapNotNull null
-            val apk = r.assets.firstOrNull { it.name.endsWith(".apk") } ?: return@mapNotNull null
-            val byVersion = compareVersions(r.tagName, currentVersion)
-            val ok = if (r.prerelease) {
-                val build = expBuild(r.tagName) ?: return@mapNotNull null // e.g. the old rolling "latest" build
-                byVersion > 0 || (byVersion == 0 && build > mine)
-            } else byVersion >= 0
-            if (!ok) null else Release(r.tagName, r.name ?: r.tagName, r.body.orEmpty(), apk.name, apk.url, apk.browserDownloadUrl)
-        }
-        // Highest version wins; at the same version, stable beats experimental, then the higher build.
-        return newer.maxWithOrNull(
-            Comparator<Release> { a, b -> compareVersions(a.tag, b.tag) }
-                .thenBy { if (isExperimental(it.tag)) 0 else 1 }
-                .thenBy { expBuild(it.tag) ?: 0 }
-        )
+    fun compareFull(a: String, b: String): Int {
+        // The only build with the old naming, v0.6-exp.27, really sat between v0.5.2 and v0.5.3.
+        if (isLegacy(a) || isLegacy(b)) return legacyRank(a).compareTo(legacyRank(b)).takeIf { it != 0 }
+            ?: (expBuild(a) ?: legacyBuild(a)).compareTo(expBuild(b) ?: legacyBuild(b))
+        val byNumbers = compareVersions(a, b)
+        if (byNumbers != 0) return byNumbers
+        val byStage = stage(a).compareTo(stage(b))
+        if (byStage != 0) return byStage
+        return (expBuild(a) ?: 0).compareTo(expBuild(b) ?: 0)
     }
 
-    private val EXP = Regex("""-exp\.(\d+)$""")
+    /**
+     * Experimental channel: the newest release worth offering to [currentVersion], or null. Newer
+     * a/b/c builds count, and so does the stable release once it ships (0.5.3 beats 0.5.3c+35).
+     * Stable installs never call this, so they never see experimental builds.
+     */
+    fun newestForExperimental(json: String, currentVersion: String): Release? =
+        JSON.decodeFromString(ListSerializer(GhRelease.serializer()), json).mapNotNull { r ->
+            if (r.draft) return@mapNotNull null
+            if (r.prerelease && !isExperimental(r.tagName)) return@mapNotNull null // e.g. the old rolling "latest" build
+            val apk = r.assets.firstOrNull { it.name.endsWith(".apk") } ?: return@mapNotNull null
+            if (compareFull(r.tagName, currentVersion) <= 0) return@mapNotNull null
+            Release(r.tagName, r.name ?: r.tagName, r.body.orEmpty(), apk.name, apk.url, apk.browserDownloadUrl)
+        }.maxWithOrNull { a, b -> compareFull(a.tag, b.tag) }
+
+    /** a = 1, b = 2, c = 3, no letter (stable) = 4. */
+    private fun stage(v: String): Int = when (PRE.find(v.trim())?.groupValues?.get(1)) {
+        "a" -> 1; "b" -> 2; "c" -> 3; else -> 4
+    }
+
+    private fun isLegacy(v: String) = v.contains("-exp")
+    private fun legacyBuild(v: String) = v.substringAfterLast('.').toIntOrNull() ?: 0
+
+    /** 0 = up to v0.5.2, 1 = the legacy -exp build, 2 = v0.5.3 and later (alphas included). */
+    private fun legacyRank(v: String): Int = when {
+        isLegacy(v) -> 1
+        compareVersions(v, "0.5.3") >= 0 -> 2
+        else -> 0
+    }
+
+    private val PRE = Regex("""^v?\d+(?:\.\d+)*([abc])(?:\+\d+)?$""")
+    private val BUILD = Regex("""\+(\d+)$""")
 
     /** Returns the release when it is newer than [currentVersion] and carries an APK, else null. */
     fun newerRelease(json: String, currentVersion: String): Release? =
@@ -69,7 +93,7 @@ object Updates {
         else -> "GitHub answered with error $httpStatus. Try again later."
     }
 
-    /** Compares "v0.1", "0.1.2", "v1.0-beta" by their numbers: negative, zero or positive. */
+    /** Compares "v0.1", "0.1.2", "v1.0-beta", "0.5.3a+27" by their numbers: negative, zero or positive. */
     fun compareVersions(a: String, b: String): Int {
         val x = numbers(a)
         val y = numbers(b)
@@ -80,8 +104,9 @@ object Updates {
         return 0
     }
 
+    /** The leading "1.2.3" numbers; letters, "-beta" or "+27" after them are ignored here. */
     private fun numbers(v: String): List<Int> =
-        v.trim().removePrefix("v").removePrefix("V").substringBefore('-').split('.').map { it.toIntOrNull() ?: 0 }
+        Regex("""^[vV]?(\d+(?:\.\d+)*)""").find(v.trim())?.groupValues?.get(1)?.split('.')?.map { it.toInt() } ?: listOf(0)
 
     @Serializable
     private data class GhRelease(

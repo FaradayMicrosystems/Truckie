@@ -1,16 +1,23 @@
 # Changelog
 
-Stable releases come from `main`. Work in progress lands on `experimental` first and is listed
-under the next version as "unreleased" until Aurora calls a full release.
+Versions follow X.Y.Z: X for primary releases, Y for user-visible changes and features, Z for minor
+fixes and looks (colours, design, logo). An optional letter marks a pre-release: a alpha, b beta,
+c release candidate. Stable releases come from `main`. Work in progress lands on `experimental`
+first as `vX.Y.Za+<build>` and is listed below as "unreleased" until Aurora calls a full release.
 
-## v0.6 — unreleased (experimental)
+## v0.5.3 — unreleased (experimental)
 
 - **Two release channels.** `main` is stable (v0.5.2 for now) and only changes on a full release.
   All new work goes to `experimental`, and each change there publishes a pre-release such as
-  `v0.6-exp.27`. Stable installs only ever update to stable releases. Experimental installs update to
-  newer experimental builds, and to the stable release once it ships.
+  `v0.5.3a+28` (alpha of 0.5.3, build 28). Stable installs only ever update to stable releases.
+  Experimental installs update to newer a/b/c builds, and to the stable release once it ships.
 - Build numbers come from GitHub, so any newer APK installs over any older one on either channel.
+- **GPS test indicator** (lower left, while auto-complete is on): a small location crosshair that is
+  **yellow** outside the next stop's arrival zone and **green** inside it, with the distance, or the
+  **2:00 countdown** while you're stopped in the zone. Lets you see auto-complete working while testing.
 - The rolling `latest` debug build is retired: the newest experimental pre-release replaces it.
+- The first experimental build went out as `v0.6-exp.27`, numbered wrongly: it is 0.5.3 alpha
+  (a behind-the-scenes change is a Z bump). It still updates to the `v0.5.3a+…` builds.
 
 ## v0.5.2 — 2026-11-05
 

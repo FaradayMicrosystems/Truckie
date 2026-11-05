@@ -16,9 +16,12 @@ val localProps = Properties().apply {
 fun prop(name: String, default: String = "") = localProps.getProperty(name, default)
 fun quoted(name: String, default: String = "") = "\"${prop(name, default)}\""
 
-// The version this branch builds. main: stable ("0.6"). experimental: next version + "-exp" ("0.7-exp").
+// The version this branch builds, Aurora's X.Y.Z rule: X primary releases, Y user-visible changes
+// and features, Z minor fixes and looks. main: stable, no letter ("0.5.3"). experimental: the next
+// version plus a (alpha), b (beta) or c (release candidate), e.g. "0.5.3a". Pick the next number
+// from what the change is (Z for fixes and behind-the-scenes, Y for features users notice).
 // CI reads this line, so keep it as one plain string.
-val baseVersionName = "0.6-exp"
+val baseVersionName = "0.5.3a"
 
 // GitHub Actions' run number: always rising, across both branches.
 val ciBuild: Int? = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull()?.takeIf { it > 11 }
@@ -38,11 +41,10 @@ android {
         applicationId = "app.truckie"
         minSdk = 26
         targetSdk = 35
-        // Release channels: main holds stable names ("0.6"); experimental holds the next one with
-        // "-exp" ("0.7-exp"). GitHub builds add their build number ("0.7-exp.31") and use it as
-        // versionCode, so every new APK installs over every older one on either channel.
+        // GitHub builds of experimental add their build counter ("0.5.3a+31"), and every GitHub build
+        // uses it as versionCode, so each new APK installs over every older one on either channel.
         versionCode = ciBuild ?: 11
-        versionName = if (baseVersionName.endsWith("-exp") && ciBuild != null) "$baseVersionName.$ciBuild" else baseVersionName
+        versionName = if (baseVersionName.last() in "abc" && ciBuild != null) "$baseVersionName+$ciBuild" else baseVersionName
         buildConfigField("String", "UPDATE_REPO", "\"FaradayMicrosystems/truckie\"")
         // Never commit the token here: it comes from local.properties or the CI secret.
         buildConfigField("String", "UPDATE_TOKEN", quoted("UPDATE_TOKEN"))

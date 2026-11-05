@@ -29,7 +29,7 @@ object Updater {
 
     /**
      * Asks GitHub for the newest release on this build's channel and says plainly what happened.
-     * Stable builds only look at full releases. Experimental builds (-exp) also see newer -exp pre-releases.
+     * Stable builds only look at full releases. Experimental builds (a/b/c letter) also see newer a/b/c pre-releases.
      */
     suspend fun check(): UpdateCheck = try {
         val version = BuildConfig.VERSION_NAME

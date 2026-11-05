@@ -47,9 +47,10 @@ jobs:
           if-no-files-found: error
 
       # Release channels (see README "Releases"):
-      #   main          stable. Its version ("0.6") publishes as the full release v0.6, which the in-app
-      #                 update check on stable installs finds. main must never carry an "-exp" version.
-      #   experimental  every push publishes a pre-release v0.7-exp.<build>. Stable installs never see these.
+      #   main          stable. Its version ("0.6.0") publishes as the full release v0.6.0, which the in-app
+      #                 update check on stable installs finds. main never carries an a/b/c letter.
+      #   experimental  every push publishes a pre-release v0.6.0a+<build> (a alpha, b beta, c release
+      #                 candidate). Stable installs never see these.
       - name: Publish release
         if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/experimental') && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
         env:
@@ -58,21 +59,23 @@ jobs:
         run: |
           BASE=$(sed -n 's/^val baseVersionName = "\([^"]*\)".*/\1/p' app/build.gradle.kts)
           [ -n "$BASE" ] || { echo "::error::baseVersionName not found in app/build.gradle.kts"; exit 1; }
-          STABLE="${BASE%-exp}"
+          case "$BASE" in [0-9]*.[0-9]*.[0-9]*) ;; *) echo "::error::version must be X.Y.Z with an optional a/b/c, found $BASE"; exit 1 ;; esac
+          STABLE="${BASE%[abc]}"
           # Release notes: the CHANGELOG section for this version ("## v0.6 — ...").
           awk -v h="## v$STABLE " 'index($0, h) == 1 {on=1; next} /^## / {on=0} on' CHANGELOG.md > notes.md
           printf '\n%s\n' "$BUILD_STATUS" >> notes.md
 
           if [ "$BRANCH" = "experimental" ]; then
-            case "$BASE" in *-exp) ;; *) echo "::error::experimental must build an -exp version, found $BASE"; exit 1 ;; esac
-            TAG="v$BASE.$GITHUB_RUN_NUMBER"
-            cp app/build/outputs/apk/debug/app-debug.apk "truckie-$TAG.apk"
-            gh release create "$TAG" "truckie-$TAG.apk" --target "$GITHUB_SHA" --prerelease --latest=false \
+            case "$BASE" in *[abc]) ;; *) echo "::error::experimental must build an a/b/c version (e.g. 0.6.0a), found $BASE"; exit 1 ;; esac
+            TAG="v$BASE+$GITHUB_RUN_NUMBER"
+            APK="truckie-v$BASE-build$GITHUB_RUN_NUMBER.apk"   # no "+" in file names
+            cp app/build/outputs/apk/debug/app-debug.apk "$APK"
+            gh release create "$TAG" "$APK" --target "$GITHUB_SHA" --prerelease --latest=false \
               --title "Truckie $TAG (experimental)" --notes-file notes.md
             exit 0
           fi
 
-          case "$BASE" in *-exp*) echo "::error::main holds stable releases only; drop -exp before a full release (found $BASE)"; exit 1 ;; esac
+          case "$BASE" in *[abc]) echo "::error::main holds stable releases only; drop the a/b/c letter before a full release (found $BASE)"; exit 1 ;; esac
           TAG="v$BASE"
           cp app/build/outputs/apk/debug/app-debug.apk "truckie-$TAG.apk"
           if gh release view "$TAG" > /dev/null 2>&1; then

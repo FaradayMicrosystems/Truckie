@@ -1,14 +1,16 @@
 # Changelog
 
-Stable releases come from `main`. Work in progress lands on `experimental` first and is listed
-under the next version as "unreleased" until Aurora calls a full release.
+Versions follow X.Y.Z: X for primary releases, Y for user-visible changes and features, Z for minor
+fixes and looks (colours, design, logo). An optional letter marks a pre-release: a alpha, b beta,
+c release candidate. Stable releases come from `main`. Work in progress lands on `experimental`
+first as `vX.Y.Za+<build>` and is listed below as "unreleased" until Aurora calls a full release.
 
-## v0.6 — unreleased (experimental)
+## v0.6.0 — unreleased (experimental)
 
 - **Two release channels.** `main` is stable (v0.5.2 for now) and only changes on a full release.
   All new work goes to `experimental`, and each change there publishes a pre-release such as
-  `v0.6-exp.27`. Stable installs only ever update to stable releases. Experimental installs update to
-  newer experimental builds, and to the stable release once it ships.
+  `v0.6.0a+27` (alpha of 0.6.0, build 27). Stable installs only ever update to stable releases.
+  Experimental installs update to newer a/b/c builds, and to the stable release once it ships.
 - Build numbers come from GitHub, so any newer APK installs over any older one on either channel.
 - The rolling `latest` debug build is retired: the newest experimental pre-release replaces it.
 

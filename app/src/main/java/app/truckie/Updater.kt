@@ -27,12 +27,21 @@ object Updater {
         if (token.isNotBlank()) put("Authorization", "Bearer $token")
     }
 
-    /** Asks GitHub for the latest release and says plainly what happened. */
+    /**
+     * Asks GitHub for the newest release on this build's channel and says plainly what happened.
+     * Stable builds only look at full releases. Experimental builds (-exp) also see newer -exp pre-releases.
+     */
     suspend fun check(): UpdateCheck = try {
-        val json = Http.get(Updates.latestReleaseUrl(BuildConfig.UPDATE_REPO), headers("application/vnd.github+json"))
-        val latest = Updates.latest(json)
-        if (latest != null && Updates.compareVersions(latest.tag, BuildConfig.VERSION_NAME) > 0) UpdateCheck.Newer(latest)
-        else UpdateCheck.UpToDate(latest?.tag)
+        val version = BuildConfig.VERSION_NAME
+        if (Updates.isExperimental(version)) {
+            val json = Http.get(Updates.releasesUrl(BuildConfig.UPDATE_REPO), headers("application/vnd.github+json"))
+            Updates.newestForExperimental(json, version)?.let { UpdateCheck.Newer(it) } ?: UpdateCheck.UpToDate("v$version")
+        } else {
+            val json = Http.get(Updates.latestReleaseUrl(BuildConfig.UPDATE_REPO), headers("application/vnd.github+json"))
+            val latest = Updates.latest(json)
+            if (latest != null && Updates.compareVersions(latest.tag, version) > 0) UpdateCheck.Newer(latest)
+            else UpdateCheck.UpToDate(latest?.tag)
+        }
     } catch (e: HttpStatusException) {
         UpdateCheck.Failed(Updates.failureReason(e.code, token.isNotBlank()))
     } catch (e: java.io.IOException) {

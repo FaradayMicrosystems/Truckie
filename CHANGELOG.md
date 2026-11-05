@@ -1,5 +1,17 @@
 # Changelog
 
+Stable releases come from `main`. Work in progress lands on `experimental` first and is listed
+under the next version as "unreleased" until Aurora calls a full release.
+
+## v0.6 — unreleased (experimental)
+
+- **Two release channels.** `main` is stable (v0.5.2 for now) and only changes on a full release.
+  All new work goes to `experimental`, and each change there publishes a pre-release such as
+  `v0.6-exp.27`. Stable installs only ever update to stable releases. Experimental installs update to
+  newer experimental builds, and to the stable release once it ships.
+- Build numbers come from GitHub, so any newer APK installs over any older one on either channel.
+- The rolling `latest` debug build is retired: the newest experimental pre-release replaces it.
+
 ## v0.5.2 — 2026-11-05
 
 - **Reverted v0.5.1's "Android Auto only" navigation.** Navigate opens Maps or Waze on the phone

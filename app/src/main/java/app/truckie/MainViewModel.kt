@@ -41,6 +41,7 @@ data class UiState(
     /** Auto-complete on arrival (⋮ menu, remembered). */
     val autoComplete: Boolean = false,
     val arrivalRadiusM: Int = ArrivalRules.DEFAULT_RADIUS_M,
+    val arrivalDwellSeconds: Int = ArrivalRules.DEFAULT_DWELL_SECONDS,
     /** What the arrival watcher sees right now, shown under the next stop. */
     val arrival: ArrivalState = ArrivalState.Idle,
     val arrivalRunning: Boolean = false,
@@ -56,7 +57,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private val _state = MutableStateFlow(
         UiState(
             stops = repo.stops.value, navApp = prefs.navApp, optimizeBy = prefs.optimizeBy,
-            autoComplete = prefs.autoComplete, arrivalRadiusM = prefs.arrivalRadiusM,
+            autoComplete = prefs.autoComplete, arrivalRadiusM = prefs.arrivalRadiusM, arrivalDwellSeconds = prefs.arrivalDwellSeconds,
             canOpenMaps = ArrivalService.canOpenNavigationFromBackground(app),
         )
     )
@@ -170,12 +171,20 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             !ArrivalService.hasLocationPermission(ctx) -> "Auto-complete needs precise location. Allow it for Truckie in Android settings."
             !started && _state.value.stops.next == null -> "Auto-complete is on. It starts watching when you have a stop to do."
             !started -> "Auto-complete is on, but couldn't start. Close and reopen Truckie."
-            else -> "Auto-complete is on: stop within ${prefs.arrivalRadiusM} m of the next stop for 2 minutes and it's ticked off."
+            else -> "Auto-complete is on: stop within ${prefs.arrivalRadiusM} m of the next stop for ${ArrivalRules.mmss(prefs.arrivalDwellSeconds)} and it's ticked off."
         }
         _state.update { it.copy(note = note) }
     }
 
-    /** Arrival zone: 50 → 75 → 100 → 50 m. */
+    /** Stop timer: 1:00 → 1:30 → 2:00 → 2:30 → 3:00 → 1:00. */
+    fun cycleArrivalDwell() {
+        val choices = ArrivalRules.DWELL_CHOICES_SECONDS
+        val s = choices[(choices.indexOf(prefs.arrivalDwellSeconds) + 1) % choices.size]
+        prefs.arrivalDwellSeconds = s
+        _state.update { it.copy(arrivalDwellSeconds = s, note = "Stop timer is now ${ArrivalRules.mmss(s)}: stay stopped in the zone that long and the stop is ticked off.") }
+    }
+
+    /** Arrival zone: 100 → 150 → 250 → 100 m. */
     fun cycleArrivalRadius() {
         val choices = ArrivalRules.RADIUS_CHOICES
         val r = choices[(choices.indexOf(prefs.arrivalRadiusM) + 1) % choices.size]

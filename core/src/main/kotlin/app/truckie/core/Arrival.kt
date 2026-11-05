@@ -11,7 +11,7 @@ data class ArrivalRules(
     /** How close to the stop's pin counts as "at the stop". */
     val radiusM: Int = DEFAULT_RADIUS_M,
     /** How long the vehicle must stay stopped inside the zone. */
-    val dwellMillis: Long = 120_000,
+    val dwellMillis: Long = DEFAULT_DWELL_SECONDS * 1000L,
     /** Readings less accurate than this are ignored: the clock pauses, it doesn't guess. */
     val maxAccuracyM: Float = 30f,
     /** Under this speed counts as stopped (walking to the door still counts). */
@@ -23,6 +23,13 @@ data class ArrivalRules(
         // 250 m (v0.5.3): big industrial sites put the parking spot well away from the address pin.
         const val DEFAULT_RADIUS_M = 250
         val RADIUS_CHOICES = listOf(100, 150, 250)
+
+        // Stop timer (v0.5.3): how long to stay stopped in the zone before the stop is ticked off.
+        const val DEFAULT_DWELL_SECONDS = 120
+        val DWELL_CHOICES_SECONDS = listOf(60, 90, 120, 150, 180)
+
+        /** "1:30" for 90 seconds. */
+        fun mmss(seconds: Int) = "%d:%02d".format(seconds / 60, seconds % 60)
     }
 }
 

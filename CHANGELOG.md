@@ -15,6 +15,8 @@ first as `vX.Y.Za+<build>` and is listed below as "unreleased" until Aurora call
 - **GPS test indicator** (lower left, while auto-complete is on): a small location crosshair that is
   **yellow** outside the next stop's arrival zone and **green** inside it, with the distance, or the
   **2:00 countdown** while you're stopped in the zone. Lets you see auto-complete working while testing.
+- **Stop timer** in the ⋮ menu (under Arrival zone): how long you stay stopped in the zone before the
+  stop is ticked off. 1:00, 1:30, 2:00 (default), 2:30 or 3:00. The GPS indicator counts down from it.
 - **Arrival zone is now 250 m by default** (choices 100 / 150 / 250 m), because big industrial sites put
   the parking well away from the address. A saved 50/75 m setting moves to 250 m.
 - **One fixed download link** for the newest experimental APK (`truckie-experimental.apk` on the `experimental` pre-release).

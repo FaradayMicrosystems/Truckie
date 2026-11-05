@@ -109,4 +109,13 @@ class ArrivalTest {
         assertEquals(ArrivalState.Idle, d.onFix(null, fix(0.0, 0, 0.0)))
         assertEquals(ArrivalState.Idle, d.onFix(stop.copy(doneAt = 1), fix(0.0, 0, 0.0)))
     }
+
+    @Test fun stopTimerIsAdjustable() {
+        val d = ArrivalDetector(ArrivalRules(dwellMillis = 60_000))
+        d.onFix(stop, fix(1000.0, 0, 50.0))
+        d.onFix(stop, fix(300.0, 60, 40.0))
+        assertEquals(ArrivalState.Waiting(1, 60), d.onFix(stop, fix(20.0, 100, 0.0)))
+        assertEquals(ArrivalState.Arrived(1), d.onFix(stop, fix(20.0, 160, 0.0)))
+        assertEquals(listOf("1:00", "1:30", "2:00", "2:30", "3:00"), ArrivalRules.DWELL_CHOICES_SECONDS.map { ArrivalRules.mmss(it) })
+    }
 }

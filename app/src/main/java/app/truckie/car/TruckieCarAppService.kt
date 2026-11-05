@@ -30,10 +30,14 @@ class TruckieCarAppService : CarAppService() {
             lifecycle.addObserver(object : DefaultLifecycleObserver {
                 override fun onCreate(owner: LifecycleOwner) {
                     Arrivals.carConnected = true
+                    CarLink.carContext = carContext
                     // Truckie is on the car screen now, so Android lets auto-complete start watching.
                     ArrivalService.startIfWanted(carContext)
                 }
-                override fun onDestroy(owner: LifecycleOwner) { Arrivals.carConnected = false }
+                override fun onDestroy(owner: LifecycleOwner) {
+                    Arrivals.carConnected = false
+                    if (CarLink.carContext === carContext) CarLink.carContext = null
+                }
             })
         }
 

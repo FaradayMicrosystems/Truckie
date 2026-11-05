@@ -10,6 +10,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.car.app.connection.CarConnection
+import app.truckie.car.CarLink
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 
@@ -28,6 +30,8 @@ class MainActivity : ComponentActivity() {
         val wanted = mutableListOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
         if (Build.VERSION.SDK_INT >= 33) wanted += Manifest.permission.POST_NOTIFICATIONS
         askPermissions.launch(wanted.toTypedArray())
+        // Knows when the phone is connected to Android Auto, so Navigate never opens Maps on the phone then.
+        CarConnection(this).type.observe(this) { CarLink.projecting = it == CarConnection.CONNECTION_TYPE_PROJECTION }
         setContent {
             val state by vm.state.collectAsState()
             TruckieTheme {

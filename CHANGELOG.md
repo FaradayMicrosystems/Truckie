@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.5.1 — 2026-11-05
+
+- **Android Auto only navigation.** While the phone is connected to Android Auto and Truckie is open
+  on the car screen, **Navigate** on the phone (and auto-complete's next stop) sends the route to the
+  car screen. Google Maps no longer pops up on the phone.
+  - Connected but Truckie not opened on the car screen yet: the phone says to open Truckie there
+    once, and doesn't open Maps.
+  - Not connected to Android Auto: Maps or Waze opens on the phone, same as before.
+
 ## v0.5 — 2026-11-05
 
 - **Auto-complete on arrival** (⋮ menu, off by default). Stopped within 75 m of the next stop for

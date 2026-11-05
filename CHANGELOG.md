@@ -1,11 +1,17 @@
 # Changelog
 
 Versions follow X.Y.Z: X for primary releases, Y for user-visible changes and features, Z for minor
-fixes and looks (colours, design, logo). An optional letter marks a pre-release: a alpha, b beta,
-c release candidate. Stable releases come from `main`. Work in progress lands on `experimental`
-first as `vX.Y.Za+<build>` and is listed below as "unreleased" until Aurora calls a full release.
+fixes and looks (colours, design, logo). Experimental builds carry the letter e (experimental);
+stable releases carry none. Stable releases come from `main`. Work in progress lands on `experimental`
+first as `vX.Y.Ze+<build>` and is listed below as "unreleased" until Aurora calls a full release.
 
 ## v0.5.3 — unreleased (experimental)
+
+- **Experimental builds are now `e` versions** (`v0.5.3e+40`), and every experimental APK is named with
+  its version (`truckie-v0.5.3e-build40.apk`), so a download can never be mistaken for another build.
+  The app shows the same version. The fixed link is now the page
+  https://github.com/FaradayMicrosystems/truckie/releases/tag/experimental, which holds only the newest
+  APK. Older `a` builds update to the `e` builds normally.
 
 - **Two release channels.** `main` is stable (v0.5.2 for now) and only changes on a full release.
   All new work goes to `experimental`, and each change there publishes a pre-release such as
@@ -17,7 +23,6 @@ first as `vX.Y.Za+<build>` and is listed below as "unreleased" until Aurora call
   **2:00 countdown** while you're stopped in the zone. Lets you see auto-complete working while testing.
 - **Arrival zone is now 250 m by default** (choices 100 / 150 / 250 m), because big industrial sites put
   the parking well away from the address. A saved 50/75 m setting moves to 250 m.
-- **One fixed download link** for the newest experimental APK (`truckie-experimental.apk` on the `experimental` pre-release).
 - The rolling `latest` debug build is retired: the newest experimental pre-release replaces it.
 - The first experimental build went out as `v0.6-exp.27`, numbered wrongly: it is 0.5.3 alpha
   (a behind-the-scenes change is a Z bump). It still updates to the `v0.5.3a+…` builds.

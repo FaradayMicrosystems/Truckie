@@ -16,8 +16,9 @@ object Updates {
 
     /**
      * Aurora's versions: X.Y.Z (X primary releases, Y user-visible changes and features, Z minor
-     * fixes and looks) plus an optional letter: a alpha, b beta, c release candidate. Builds from the
-     * experimental branch carry a letter and a build counter after "+", like "0.5.3a+27".
+     * fixes and looks) plus an optional letter. Builds from the experimental branch carry "e"
+     * (experimental) and a build counter after "+", like "0.5.3e+40". Older builds used a alpha,
+     * b beta, c release candidate ("0.5.3a+39"); those are still understood so they can update.
      */
     fun isExperimental(version: String) = PRE.containsMatchIn(version.trim()) || version.contains("-exp")
 
@@ -25,8 +26,8 @@ object Updates {
     fun expBuild(version: String): Int? = BUILD.find(version.trim())?.groupValues?.get(1)?.toIntOrNull()
 
     /**
-     * Full ordering: numbers first, then a < b < c < stable at the same numbers, then the build counter.
-     * So 0.5.3a+27 < 0.5.3a+30 < 0.5.3b+31 < 0.5.3 < 0.5.4a+40.
+     * Full ordering: numbers first, then a < b < c < e < stable at the same numbers, then the build
+     * counter. So 0.5.3a+27 < 0.5.3a+39 < 0.5.3e+40 < 0.5.3 < 0.5.4e+50.
      */
     fun compareFull(a: String, b: String): Int {
         // The only build with the old naming, v0.6-exp.27, really sat between v0.5.2 and v0.5.3.
@@ -41,7 +42,7 @@ object Updates {
 
     /**
      * Experimental channel: the newest release worth offering to [currentVersion], or null. Newer
-     * a/b/c builds count, and so does the stable release once it ships (0.5.3 beats 0.5.3c+35).
+     * experimental builds count, and so does the stable release once it ships (0.5.3 beats 0.5.3c+35).
      * Stable installs never call this, so they never see experimental builds.
      */
     fun newestForExperimental(json: String, currentVersion: String): Release? =
@@ -53,9 +54,9 @@ object Updates {
             Release(r.tagName, r.name ?: r.tagName, r.body.orEmpty(), apk.name, apk.url, apk.browserDownloadUrl)
         }.maxWithOrNull { a, b -> compareFull(a.tag, b.tag) }
 
-    /** a = 1, b = 2, c = 3, no letter (stable) = 4. */
+    /** a = 1, b = 2, c = 3, e = 4, no letter (stable) = 5. */
     private fun stage(v: String): Int = when (PRE.find(v.trim())?.groupValues?.get(1)) {
-        "a" -> 1; "b" -> 2; "c" -> 3; else -> 4
+        "a" -> 1; "b" -> 2; "c" -> 3; "e" -> 4; else -> 5
     }
 
     private fun isLegacy(v: String) = v.contains("-exp")
@@ -68,7 +69,7 @@ object Updates {
         else -> 0
     }
 
-    private val PRE = Regex("""^v?\d+(?:\.\d+)*([abc])(?:\+\d+)?$""")
+    private val PRE = Regex("""^v?\d+(?:\.\d+)*([abce])(?:\+\d+)?$""")
     private val BUILD = Regex("""\+(\d+)$""")
 
     /** Returns the release when it is newer than [currentVersion] and carries an APK, else null. */

@@ -95,8 +95,9 @@ key and billing) is a change to `Osrm.kt` and `MainViewModel.optimize()` only.
 
 - **Stable** (what drivers should use): https://github.com/FaradayMicrosystems/truckie/releases/latest
   (download `truckie-vX.Y.apk` under **Assets**).
-- **Experimental** (newest work, may break): the newest `vX.Y.Za+N` pre-release on
-  https://github.com/FaradayMicrosystems/truckie/releases.
+- **Experimental** (newest work, may break): always the newest build at
+  https://github.com/FaradayMicrosystems/truckie/releases/download/experimental/truckie-experimental.apk
+  (each build is also kept as its own `vX.Y.Za+N` pre-release).
 
 The repo is private, so these links only work while signed in to GitHub with access to it.
 Open the APK on an Android 8.0+ phone and allow installs from that source when asked.

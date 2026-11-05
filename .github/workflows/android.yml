@@ -72,6 +72,16 @@ jobs:
             cp app/build/outputs/apk/debug/app-debug.apk "$APK"
             gh release create "$TAG" "$APK" --target "$GITHUB_SHA" --prerelease --latest=false \
               --title "Truckie $TAG (experimental)" --notes-file notes.md
+            # One fixed link that always holds the newest experimental APK:
+            # https://github.com/FaradayMicrosystems/truckie/releases/download/experimental/truckie-experimental.apk
+            cp "$APK" truckie-experimental.apk
+            if gh release view experimental > /dev/null 2>&1; then
+              gh release upload experimental truckie-experimental.apk --clobber
+              gh release edit experimental --title "Experimental: newest build ($TAG)" --notes "Newest experimental build, $TAG. Same file as that release. $BUILD_STATUS"
+            else
+              gh release create experimental truckie-experimental.apk --target "$GITHUB_SHA" --prerelease --latest=false \
+                --title "Experimental: newest build ($TAG)" --notes "Newest experimental build, $TAG. Same file as that release. $BUILD_STATUS"
+            fi
             exit 0
           fi
 

@@ -20,8 +20,9 @@ data class ArrivalRules(
     val drivingKmh: Double = 15.0,
 ) {
     companion object {
-        const val DEFAULT_RADIUS_M = 75
-        val RADIUS_CHOICES = listOf(50, 75, 100)
+        // 250 m (v0.5.3): big industrial sites put the parking spot well away from the address pin.
+        const val DEFAULT_RADIUS_M = 250
+        val RADIUS_CHOICES = listOf(100, 150, 250)
     }
 }
 

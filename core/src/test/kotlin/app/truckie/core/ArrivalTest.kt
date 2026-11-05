@@ -41,15 +41,15 @@ class ArrivalTest {
         // Drives for the GPS indicator: yellow outside, green inside.
         val d = ArrivalDetector()
         assertEquals(false, (d.onFix(stop, fix(1000.0, 0, 50.0)) as ArrivalState.Heading).inside)
-        assertEquals(false, (d.onFix(stop, fix(90.0, 10, 50.0)) as ArrivalState.Heading).inside)
-        assertEquals(true, (d.onFix(stop, fix(20.0, 20, 50.0)) as ArrivalState.Heading).inside) // inside but still moving
+        assertEquals(false, (d.onFix(stop, fix(300.0, 10, 50.0)) as ArrivalState.Heading).inside)
+        assertEquals(true, (d.onFix(stop, fix(200.0, 20, 50.0)) as ArrivalState.Heading).inside) // inside but still moving
     }
 
     @Test fun neverFiresOutsideTheZone() {
         val d = ArrivalDetector()
         d.onFix(stop, fix(1000.0, 0, 50.0))
-        // Parked 90 m away (outside the 75 m default) for 10 minutes.
-        for (t in 60L..660L step 10) assertIs<ArrivalState.Heading>(d.onFix(stop, fix(90.0, t, 0.0)))
+        // Parked 300 m away (outside the 250 m default) for 10 minutes.
+        for (t in 60L..660L step 10) assertIs<ArrivalState.Heading>(d.onFix(stop, fix(300.0, t, 0.0)))
     }
 
     @Test fun drivingPastNeverFires() {

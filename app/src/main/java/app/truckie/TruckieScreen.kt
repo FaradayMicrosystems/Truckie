@@ -73,6 +73,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import app.truckie.core.ArrivalRules
 import app.truckie.core.ArrivalState
 import app.truckie.core.NavApp
 import app.truckie.core.OptimizeBy
@@ -147,6 +148,10 @@ fun TruckieScreen(state: UiState, vm: MainViewModel, navigate: (Stop) -> Unit, a
                                 DropdownMenuItem(
                                     text = { Text("    Arrival zone: ${state.arrivalRadiusM} m (tap to change)") },
                                     onClick = { vm.cycleArrivalRadius() },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("    Stop timer: ${ArrivalRules.mmss(state.arrivalDwellSeconds)} (tap to change)") },
+                                    onClick = { vm.cycleArrivalDwell() },
                                 )
                                 DropdownMenuItem(
                                     text = { Text((if (state.canOpenMaps) "    ☑ " else "    ☐ ") + "Open Maps by itself") },
@@ -452,7 +457,7 @@ private fun ArrivalLine(state: UiState) {
 
 /**
  * v0.5.3: lower-left GPS indicator for testing auto-complete. Yellow = outside the next stop's
- * arrival zone, green = inside it. While stopped in the zone it counts down the 2 minutes.
+ * arrival zone, green = inside it. While stopped in the zone it counts down the stop timer.
  */
 @Composable
 private fun GpsBadge(a: ArrivalState, modifier: Modifier = Modifier) {

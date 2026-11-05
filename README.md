@@ -20,7 +20,7 @@ around Waze's stop limit.
   3. **Navigate to next stop?** counts down 5 seconds. No tap = Yes: Google Maps or Waze opens
      already navigating. **No** keeps you in Truckie.
 - **Auto-complete on arrival** (v0.5, off until you turn it on in ⋮): stop within 250 m of the
-  next stop for 2 minutes and Truckie does what the green button does, then opens navigation to
+  next stop for 2 minutes (the stop timer, 1:00 to 3:00 in ⋮) and Truckie does what the green button does, then opens navigation to
   the next stop after 5 seconds. See [Auto-complete on arrival](#auto-complete-on-arrival).
 - **Tap a stop** to navigate there, switch pickup/delivery, or remove it.
 - **Menu (⋮):** Google Maps or Waze, **Auto-complete on arrival** (with arrival zone and
@@ -38,7 +38,7 @@ Turn on in **⋮ > Auto-complete on arrival**. A stop is ticked off only when **
   Truckie while already parked, or two stops on one street without moving the truck, needs a tap.
 - A GPS reading accurate to **±30 m or better** puts you inside the **arrival zone** (250 m by
   default for big industrial sites; ⋮ > Arrival zone switches 100 / 150 / 250 m). Less accurate readings are ignored.
-- You stay **under 7 km/h for 2 minutes straight** (walking to the door still counts). Leaving the
+- You stay **under 7 km/h for the stop timer** (2:00 by default; ⋮ > Stop timer switches 1:00 / 1:30 / 2:00 / 2:30 / 3:00) (walking to the door still counts). Leaving the
   zone or driving off resets the clock to zero.
 
 Then: the stop is struck out, a notification says **Done: <address>** with **Undo** and

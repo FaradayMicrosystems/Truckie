@@ -22,7 +22,12 @@ class Prefs(context: Context) {
         get() = sp.getBoolean("autoComplete", false)
         set(v) = sp.edit().putBoolean("autoComplete", v).apply()
 
-    /** Arrival zone radius in metres: 50, 75 or 100. */
+    /** Stop timer in seconds: 60, 90, 120, 150 or 180 (v0.5.3). */
+    var arrivalDwellSeconds: Int
+        get() = sp.getInt("arrivalDwellSeconds", ArrivalRules.DEFAULT_DWELL_SECONDS).takeIf { it in ArrivalRules.DWELL_CHOICES_SECONDS } ?: ArrivalRules.DEFAULT_DWELL_SECONDS
+        set(v) = sp.edit().putInt("arrivalDwellSeconds", v).apply()
+
+    /** Arrival zone radius in metres: 100, 150 or 250. */
     var arrivalRadiusM: Int
         get() = sp.getInt("arrivalRadiusM", ArrivalRules.DEFAULT_RADIUS_M).takeIf { it in ArrivalRules.RADIUS_CHOICES } ?: ArrivalRules.DEFAULT_RADIUS_M
         set(v) = sp.edit().putInt("arrivalRadiusM", v).apply()

@@ -43,7 +43,7 @@ import kotlinx.coroutines.launch
 /**
  * Auto-complete on arrival (v0.5). Watches GPS while you drive, with a small "Watching for arrival"
  * notification so it keeps going while Google Maps or Waze is on screen. When the vehicle has been
- * stopped inside the next stop's zone for 2 minutes (see ArrivalDetector), it does what the green
+ * stopped inside the next stop's zone for the stop timer (2 minutes by default) (see ArrivalDetector), it does what the green
  * button does: strikes the stop out, then opens navigation to the next stop after 5 seconds.
  * The alert has Undo, which puts the stop back.
  */
@@ -163,7 +163,7 @@ class ArrivalService : Service(), LocationListener {
             accuracyM = if (location.hasAccuracy()) location.accuracy else null,
             speedMps = if (location.hasSpeed()) location.speed else null,
         )
-        detector.rules = ArrivalRules(radiusM = prefs.arrivalRadiusM)
+        detector.rules = ArrivalRules(radiusM = prefs.arrivalRadiusM, dwellMillis = prefs.arrivalDwellSeconds * 1000L)
         val next = repo.stops.value.next
         val state = detector.onFix(next, fix)
         Arrivals.status.value = state

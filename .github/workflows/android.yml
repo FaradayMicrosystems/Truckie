@@ -2,7 +2,7 @@ name: Android build
 
 on:
   push:
-    branches: [main]
+    branches: [main, experimental]
   pull_request:
   workflow_dispatch:
 
@@ -46,30 +46,34 @@ jobs:
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 
-      # Every push to main replaces the "latest" pre-release, so this link always has the newest APK:
-      # https://github.com/FaradayMicrosystems/truckie/releases/download/latest/truckie-debug.apk
-      - name: Publish latest APK
-        if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+      # Release channels (see README "Releases"):
+      #   main          stable. Its version ("0.6") publishes as the full release v0.6, which the in-app
+      #                 update check on stable installs finds. main must never carry an "-exp" version.
+      #   experimental  every push publishes a pre-release v0.7-exp.<build>. Stable installs never see these.
+      - name: Publish release
+        if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/experimental') && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
         env:
           GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ github.ref_name }}
         run: |
-          cp app/build/outputs/apk/debug/app-debug.apk truckie-debug.apk
-          gh release delete latest --cleanup-tag --yes || true
-          gh release create latest truckie-debug.apk --target "$GITHUB_SHA" --prerelease \
-            --title "Latest build (${GITHUB_SHA::7})" \
-            --notes "Debug build of main. Open the .apk on an Android 8.0+ phone and allow installs from this source when asked. $BUILD_STATUS"
-
-      # A new versionName publishes a full release, named and noted from CHANGELOG.md.
-      # The app's update check looks at this release. Re-running for an existing version replaces its APK.
-      - name: Publish versioned release
-        if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          VERSION=$(sed -n 's/.*versionName = "\(.*\)".*/\1/p' app/build.gradle.kts)
-          TAG="v$VERSION"
-          awk -v h="## $TAG" 'index($0, h) == 1 {on=1; next} /^## / {on=0} on' CHANGELOG.md > notes.md
+          BASE=$(sed -n 's/^val baseVersionName = "\([^"]*\)".*/\1/p' app/build.gradle.kts)
+          [ -n "$BASE" ] || { echo "::error::baseVersionName not found in app/build.gradle.kts"; exit 1; }
+          STABLE="${BASE%-exp}"
+          # Release notes: the CHANGELOG section for this version ("## v0.6 — ...").
+          awk -v h="## v$STABLE " 'index($0, h) == 1 {on=1; next} /^## / {on=0} on' CHANGELOG.md > notes.md
           printf '\n%s\n' "$BUILD_STATUS" >> notes.md
+
+          if [ "$BRANCH" = "experimental" ]; then
+            case "$BASE" in *-exp) ;; *) echo "::error::experimental must build an -exp version, found $BASE"; exit 1 ;; esac
+            TAG="v$BASE.$GITHUB_RUN_NUMBER"
+            cp app/build/outputs/apk/debug/app-debug.apk "truckie-$TAG.apk"
+            gh release create "$TAG" "truckie-$TAG.apk" --target "$GITHUB_SHA" --prerelease --latest=false \
+              --title "Truckie $TAG (experimental)" --notes-file notes.md
+            exit 0
+          fi
+
+          case "$BASE" in *-exp*) echo "::error::main holds stable releases only; drop -exp before a full release (found $BASE)"; exit 1 ;; esac
+          TAG="v$BASE"
           cp app/build/outputs/apk/debug/app-debug.apk "truckie-$TAG.apk"
           if gh release view "$TAG" > /dev/null 2>&1; then
             gh release upload "$TAG" "truckie-$TAG.apk" --clobber

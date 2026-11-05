@@ -1,6 +1,7 @@
 package app.truckie.core
 
 import kotlinx.serialization.SerialName
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
@@ -9,6 +10,42 @@ data class Release(val tag: String, val name: String, val notes: String, val apk
 /** Checks the repo's latest GitHub Release against the installed version. */
 object Updates {
     fun latestReleaseUrl(repo: String) = "https://api.github.com/repos/$repo/releases/latest"
+
+    /** Newest releases first, pre-releases included (the experimental channel reads this). */
+    fun releasesUrl(repo: String) = "https://api.github.com/repos/$repo/releases?per_page=30"
+
+    /** Experimental builds are named like "0.6-exp.27" (next version, "-exp", GitHub build number). */
+    fun isExperimental(version: String) = version.contains("-exp")
+
+    /** The build number at the end of "0.6-exp.27", or null for a stable version. */
+    fun expBuild(version: String): Int? = EXP.find(version.trim())?.groupValues?.get(1)?.toIntOrNull()
+
+    /**
+     * Experimental channel: the newest release worth offering to [currentVersion] (an -exp build), or null.
+     * Newer experimental builds count, and so does the stable release of the same version or later
+     * (v0.6 is newer than v0.6-exp.27). Stable installs never call this, so they never see experimental builds.
+     */
+    fun newestForExperimental(json: String, currentVersion: String): Release? {
+        val mine = expBuild(currentVersion) ?: 0
+        val newer = JSON.decodeFromString(ListSerializer(GhRelease.serializer()), json).mapNotNull { r ->
+            if (r.draft) return@mapNotNull null
+            val apk = r.assets.firstOrNull { it.name.endsWith(".apk") } ?: return@mapNotNull null
+            val byVersion = compareVersions(r.tagName, currentVersion)
+            val ok = if (r.prerelease) {
+                val build = expBuild(r.tagName) ?: return@mapNotNull null // e.g. the old rolling "latest" build
+                byVersion > 0 || (byVersion == 0 && build > mine)
+            } else byVersion >= 0
+            if (!ok) null else Release(r.tagName, r.name ?: r.tagName, r.body.orEmpty(), apk.name, apk.url, apk.browserDownloadUrl)
+        }
+        // Highest version wins; at the same version, stable beats experimental, then the higher build.
+        return newer.maxWithOrNull(
+            Comparator<Release> { a, b -> compareVersions(a.tag, b.tag) }
+                .thenBy { if (isExperimental(it.tag)) 0 else 1 }
+                .thenBy { expBuild(it.tag) ?: 0 }
+        )
+    }
+
+    private val EXP = Regex("""-exp\.(\d+)$""")
 
     /** Returns the release when it is newer than [currentVersion] and carries an APK, else null. */
     fun newerRelease(json: String, currentVersion: String): Release? =

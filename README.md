@@ -93,10 +93,10 @@ key and billing) is a change to `Osrm.kt` and `MainViewModel.optimize()` only.
 
 ## Install
 
-- Newest release: https://github.com/FaradayMicrosystems/truckie/releases/latest
+- **Stable** (what drivers should use): https://github.com/FaradayMicrosystems/truckie/releases/latest
   (download `truckie-vX.Y.apk` under **Assets**).
-- All releases: https://github.com/FaradayMicrosystems/truckie/releases. The `latest` pre-release
-  there holds `truckie-debug.apk`, rebuilt from every push to main (it's briefly missing while a build replaces it).
+- **Experimental** (newest work, may break): the newest `vX.Y-exp.N` pre-release on
+  https://github.com/FaradayMicrosystems/truckie/releases.
 
 The repo is private, so these links only work while signed in to GitHub with access to it.
 Open the APK on an Android 8.0+ phone and allow installs from that source when asked.
@@ -126,9 +126,21 @@ and `./gradlew :core:test` for the unit tests.
 
 ## Releases
 
-Raise `versionName` (and `versionCode`) in `app/build.gradle.kts`, add a `## vX.Y` section to
-`CHANGELOG.md`, and push to main. The build publishes "Truckie vX.Y" with `truckie-vX.Y.apk`,
-which is what the in-app update check finds.
+Two channels, like a normal dev team:
+
+| Branch | Version in `app/build.gradle.kts` | Each push publishes | Who gets it |
+|---|---|---|---|
+| `main` | `baseVersionName = "0.6"` | full release `v0.6` (`truckie-v0.6.apk`) | stable installs |
+| `experimental` | `baseVersionName = "0.7-exp"` | pre-release `v0.7-exp.<build>` | experimental installs |
+
+- **All new work** goes in a PR to `experimental` (the default branch). Its CHANGELOG section reads
+  `## v0.7 — unreleased (experimental)`.
+- **Full release** (only when Aurora says so): a PR from `experimental` to `main` that sets
+  `baseVersionName` to the stable number ("0.7") and dates the CHANGELOG heading. Merging it publishes
+  `v0.7`. Then `experimental` moves on to "0.8-exp".
+- `versionCode` is GitHub's build number, so every new APK installs over every older one.
+- The in-app update check follows the install's channel: stable installs only see full releases;
+  experimental installs see newer `-exp` builds and the matching stable release.
 
 ## Project layout
 

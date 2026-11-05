@@ -44,6 +44,14 @@ class ChannelTest {
         assertNull(Updates.newestForExperimental(json, "0.7.0a+36"))
     }
 
+    @Test fun legacyExpBuildStillUpdates() {
+        // v0.6-exp.27 shipped before the X.Y.Z rule; it must still find the a/b/c builds.
+        assertTrue(Updates.isExperimental("0.6-exp.27"))
+        val json = list(rel("v0.6.0a+28", true), rel("v0.6-exp.27", true), rel("v0.5.2", false))
+        assertEquals("v0.6.0a+28", Updates.newestForExperimental(json, "0.6-exp.27")?.tag)
+        assertNull(Updates.newestForExperimental(json, "0.6.0a+28"))
+    }
+
     @Test fun skipsReleasesWithoutApk() {
         val json = list(rel("v0.6.0a+31", true, apk = false), rel("v0.6.0a+30", true))
         assertEquals("v0.6.0a+30", Updates.newestForExperimental(json, "0.6.0a+27")?.tag)

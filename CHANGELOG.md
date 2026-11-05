@@ -13,6 +13,8 @@ first as `vX.Y.Za+<build>` and is listed below as "unreleased" until Aurora call
   Experimental installs update to newer a/b/c builds, and to the stable release once it ships.
 - Build numbers come from GitHub, so any newer APK installs over any older one on either channel.
 - The rolling `latest` debug build is retired: the newest experimental pre-release replaces it.
+- The first experimental build went out as `v0.6-exp.27` before the X.Y.Z rule was applied; it
+  still updates to the `v0.6.0a+…` builds.
 
 ## v0.5.2 — 2026-11-05
 

@@ -19,7 +19,7 @@ object Updates {
      * fixes and looks) plus an optional letter: a alpha, b beta, c release candidate. Builds from the
      * experimental branch carry a letter and a build counter after "+", like "0.6.0a+27".
      */
-    fun isExperimental(version: String) = PRE.containsMatchIn(version.trim())
+    fun isExperimental(version: String) = PRE.containsMatchIn(version.trim()) || version.contains("-exp")
 
     /** The build counter after "+" ("0.6.0a+27" is 27), or null. */
     fun expBuild(version: String): Int? = BUILD.find(version.trim())?.groupValues?.get(1)?.toIntOrNull()
@@ -50,9 +50,10 @@ object Updates {
             Release(r.tagName, r.name ?: r.tagName, r.body.orEmpty(), apk.name, apk.url, apk.browserDownloadUrl)
         }.maxWithOrNull { a, b -> compareFull(a.tag, b.tag) }
 
-    /** a = 1, b = 2, c = 3, no letter (stable) = 4. */
+    /** Legacy "0.6-exp.27" (the first experimental build) = 0, a = 1, b = 2, c = 3, no letter (stable) = 4. */
     private fun stage(v: String): Int = when (PRE.find(v.trim())?.groupValues?.get(1)) {
-        "a" -> 1; "b" -> 2; "c" -> 3; else -> 4
+        "a" -> 1; "b" -> 2; "c" -> 3
+        else -> if (v.contains("-exp")) 0 else 4
     }
 
     private val PRE = Regex("""^v?\d+(?:\.\d+)*([abc])(?:\+\d+)?$""")

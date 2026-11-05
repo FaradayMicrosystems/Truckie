@@ -13,10 +13,14 @@ import app.truckie.core.Stop
  * Opening the next stop replaces the previous route there, so the nav app never holds the list.
  */
 object Navigator {
-    fun navigate(context: Context, app: NavApp, stop: Stop) {
-        val direct = Intent(Intent.ACTION_VIEW, Uri.parse(app.navigationUri(stop)))
+    /** The intent that opens [app] with driving directions to [stop]. Also used by the arrival notification's Navigate button. */
+    fun intent(app: NavApp, stop: Stop): Intent =
+        Intent(Intent.ACTION_VIEW, Uri.parse(app.navigationUri(stop)))
             .setPackage(app.packageName)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+
+    fun navigate(context: Context, app: NavApp, stop: Stop) {
+        val direct = intent(app, stop)
         try {
             context.startActivity(direct)
             return

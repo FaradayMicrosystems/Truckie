@@ -68,6 +68,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import app.truckie.core.ArrivalState
 import app.truckie.core.NavApp
 import app.truckie.core.OptimizeBy
 import app.truckie.core.Stop
@@ -90,7 +91,7 @@ fun TruckieTheme(content: @Composable () -> Unit) {
 }
 
 @Composable
-fun TruckieScreen(state: UiState, vm: MainViewModel, navigate: (Stop) -> Unit) {
+fun TruckieScreen(state: UiState, vm: MainViewModel, navigate: (Stop) -> Unit, allowOpenMaps: () -> Unit) {
     var menuOpen by remember { mutableStateOf(false) }
     var confirmClear by remember { mutableStateOf(false) }
     var showDone by rememberSaveable { mutableStateOf(false) }
@@ -133,6 +134,21 @@ fun TruckieScreen(state: UiState, vm: MainViewModel, navigate: (Stop) -> Unit) {
                                 }
                             }
                             HorizontalDivider()
+                            DropdownMenuItem(
+                                text = { Text((if (state.autoComplete) "☑ " else "☐ ") + "Auto-complete on arrival") },
+                                onClick = { vm.setAutoComplete(!state.autoComplete); menuOpen = false },
+                            )
+                            if (state.autoComplete) {
+                                DropdownMenuItem(
+                                    text = { Text("    Arrival zone: ${state.arrivalRadiusM} m (tap to change)") },
+                                    onClick = { vm.cycleArrivalRadius() },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text((if (state.canOpenMaps) "    ☑ " else "    ☐ ") + "Open Maps by itself") },
+                                    onClick = { allowOpenMaps(); menuOpen = false },
+                                )
+                            }
+                            HorizontalDivider()
                             DropdownMenuItem(text = { Text("Undo optimize (order added)") }, onClick = { vm.undoOptimize(); menuOpen = false })
                             HorizontalDivider()
                             DropdownMenuItem(text = { Text("Check for updates") }, onClick = { vm.checkForUpdates(); menuOpen = false })
@@ -150,6 +166,7 @@ fun TruckieScreen(state: UiState, vm: MainViewModel, navigate: (Stop) -> Unit) {
                 Text(state.busy, Modifier.padding(horizontal = 16.dp, vertical = 4.dp), style = MaterialTheme.typography.bodySmall)
             }
             NextStopCard(state, onComplete = vm::completeNext, navigate = navigate)
+            ArrivalLine(state)
             state.note?.let { Text(it, Modifier.padding(horizontal = 16.dp, vertical = 4.dp), style = MaterialTheme.typography.bodyMedium) }
             AddStopRow(enabled = state.busy == null, onAdd = vm::addStop)
             val listState = rememberLazyListState()
@@ -409,4 +426,18 @@ private fun NavigateNextDialog(next: Stop, app: NavApp, onYes: () -> Unit, onNo:
         confirmButton = { Button(onClick = onYes) { Text("Yes ($secondsLeft)") } },
         dismissButton = { TextButton(onClick = onNo) { Text("No") } },
     )
+}
+
+/** One line under the next stop while auto-complete is on, so you can see what it's thinking. */
+@Composable
+private fun ArrivalLine(state: UiState) {
+    if (!state.autoComplete || state.stops.next == null) return
+    val a = state.arrival
+    val text = if (!state.arrivalRunning) "Auto-complete: starts when you tap Navigate." else when (a) {
+        is ArrivalState.Waiting -> "Auto-complete: stopped here, done in %d:%02d unless you move.".format(a.secondsLeft / 60, a.secondsLeft % 60)
+        is ArrivalState.Heading -> "Auto-complete: watching (${if (a.metres < 1000) "${a.metres} m" else "%.1f km".format(a.metres / 1000.0)} away)."
+        is ArrivalState.Arrived -> "Auto-complete: done."
+        ArrivalState.Idle -> "Auto-complete: waiting for a good GPS fix…"
+    }
+    Text(text, Modifier.padding(horizontal = 16.dp, vertical = 2.dp), style = MaterialTheme.typography.bodySmall, color = DoneGreen)
 }

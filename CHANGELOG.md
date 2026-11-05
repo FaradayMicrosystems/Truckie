@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.5.2 — 2026-11-05
+
+- **Reverted v0.5.1's "Android Auto only" navigation.** Navigate opens Maps or Waze on the phone
+  again, same as v0.5. In v0.5.1, a phone connected to Android Auto refused to navigate whenever
+  Truckie wasn't open on the car screen, and Android Auto currently hides Truckie, so Navigate did nothing.
+
 ## v0.5.1 — 2026-11-05
 
 - **Android Auto only navigation.** While the phone is connected to Android Auto and Truckie is open

@@ -61,9 +61,6 @@ it won't auto-complete again until you've driven out of its zone. **Restore** un
 - Car home screen: next stop, **That one's done! Let's ride!**, **Navigate**, **Undo**, **Stops**.
 - **Navigate to next stop?** after each stop, auto-yes after 5 seconds.
 - Phone and car share one stop list. Navigation in the car opens Android Auto's default nav app.
-- **Android Auto only (v0.5.1):** while connected and Truckie has been opened on the car screen,
-  **Navigate** on the phone sends the route to the car; Maps doesn't open on the phone. Not
-  connected: Maps or Waze opens on the phone as usual.
 - **Auto-complete on arrival** works in the car too: the car screen shows **Navigate to next stop?**
   (auto-yes after 5 s) when Truckie is on the car screen. While Maps is on the car screen, the
   **Done** alert pops up there with **Navigate** and **Undo** buttons.

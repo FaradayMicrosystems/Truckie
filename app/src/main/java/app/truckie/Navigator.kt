@@ -5,9 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
-import android.os.Handler
-import android.os.Looper
-import app.truckie.car.CarLink
 import app.truckie.core.NavApp
 import app.truckie.core.Stop
 
@@ -22,20 +19,7 @@ object Navigator {
             .setPackage(app.packageName)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
-    /**
-     * v0.5.1, Android Auto only: when the phone is connected to Android Auto, the route goes to the
-     * car screen and the phone stays on Truckie. Not connected: Maps or Waze opens on the phone as before.
-     */
     fun navigate(context: Context, app: NavApp, stop: Stop) {
-        if (CarLink.navigate(stop)) {
-            toast(context, "Sent to Android Auto: ${stop.address}")
-            return
-        }
-        if (CarLink.projecting) {
-            // Connected to the car, but Truckie isn't open on the car screen, so Android won't let it send the route.
-            toast(context, "Open Truckie on the car screen once, then tap Navigate again. (Maps stays off the phone while you're connected.)")
-            return
-        }
         val direct = intent(app, stop)
         try {
             context.startActivity(direct)
@@ -50,7 +34,4 @@ object Navigator {
             Toast.makeText(context, "No app can open directions. Install ${app.label}.", Toast.LENGTH_LONG).show()
         }
     }
-
-    private fun toast(context: Context, text: String) =
-        Handler(Looper.getMainLooper()).post { Toast.makeText(context.applicationContext, text, Toast.LENGTH_LONG).show() }
 }

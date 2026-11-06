@@ -21,7 +21,7 @@ fun quoted(name: String, default: String = "") = "\"${prop(name, default)}\""
 // version plus e (experimental), e.g. "0.6.1e". Pick the next number
 // from what the change is (Z for fixes and behind-the-scenes, Y for features users notice).
 // CI reads this line, so keep it as one plain string.
-val baseVersionName = "0.6.0"
+val baseVersionName = "0.6.1e"
 
 // GitHub Actions' run number: always rising, across both branches.
 val ciBuild: Int? = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull()?.takeIf { it > 11 }

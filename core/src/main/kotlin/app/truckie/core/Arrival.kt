@@ -11,7 +11,7 @@ data class ArrivalRules(
     /** How close to the stop's pin counts as "at the stop". */
     val radiusM: Int = DEFAULT_RADIUS_M,
     /** How long the vehicle must stay stopped inside the zone. */
-    val dwellMillis: Long = 120_000,
+    val dwellMillis: Long = DEFAULT_DWELL_SECONDS * 1000L,
     /** Readings less accurate than this are ignored: the clock pauses, it doesn't guess. */
     val maxAccuracyM: Float = 30f,
     /** Under this speed counts as stopped (walking to the door still counts). */
@@ -20,8 +20,16 @@ data class ArrivalRules(
     val drivingKmh: Double = 15.0,
 ) {
     companion object {
-        const val DEFAULT_RADIUS_M = 75
-        val RADIUS_CHOICES = listOf(50, 75, 100)
+        // 250 m (v0.5.3): big industrial sites put the parking spot well away from the address pin.
+        const val DEFAULT_RADIUS_M = 250
+        val RADIUS_CHOICES = listOf(100, 150, 250)
+
+        // Stop timer (v0.5.3): how long to stay stopped in the zone before the stop is ticked off.
+        const val DEFAULT_DWELL_SECONDS = 120
+        val DWELL_CHOICES_SECONDS = listOf(60, 90, 120, 150, 180)
+
+        /** "1:30" for 90 seconds. */
+        fun mmss(seconds: Int) = "%d:%02d".format(seconds / 60, seconds % 60)
     }
 }
 
@@ -29,7 +37,7 @@ sealed interface ArrivalState {
     /** Nothing to watch, or the reading was too poor to use. */
     data object Idle : ArrivalState
     /** Watching [stopId]; [metres] away. Not yet seen driving towards it. */
-    data class Heading(val stopId: Long, val metres: Int) : ArrivalState
+    data class Heading(val stopId: Long, val metres: Int, val inside: Boolean = false) : ArrivalState
     /** Stopped inside the zone; auto-completes in [secondsLeft] unless the vehicle moves. */
     data class Waiting(val stopId: Long, val secondsLeft: Int) : ArrivalState
     /** Stopped inside the zone for the full time: complete [stopId] now. Reported once per arrival. */
@@ -86,7 +94,7 @@ class ArrivalDetector(var rules: ArrivalRules = ArrivalRules()) {
         val stopped = speedKmh != null && speedKmh < rules.stoppedKmh
         if (!inside || !stopped || !drove || firedId == next.id) {
             dwellStart = null
-            return ArrivalState.Heading(next.id, metres.toInt())
+            return ArrivalState.Heading(next.id, metres.toInt(), inside)
         }
         val start = dwellStart ?: fix.timeMillis.also { dwellStart = it }
         val waited = fix.timeMillis - start

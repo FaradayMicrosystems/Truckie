@@ -5,7 +5,7 @@ them in a good order, and hands Google Maps (or Waze) one stop at a time. Google
 Truckie decides where to go next. That stops Google Maps inserting new stops mid-route and gets
 around Waze's stop limit.
 
-## What works in v0.5
+## What works in v0.6.0
 
 - **Add stops** by typing an address, `lat,lng`, or pasting a Google Maps link. New stops always
   go on the **end** of the list, in the order you add them. Tick **Pickup** for a pickup.
@@ -19,8 +19,8 @@ around Waze's stop limit.
   2. Tap it: the stop is struck out into **Done** (tap **Restore** to undo a misclick).
   3. **Navigate to next stop?** counts down 5 seconds. No tap = Yes: Google Maps or Waze opens
      already navigating. **No** keeps you in Truckie.
-- **Auto-complete on arrival** (v0.5, off until you turn it on in ⋮): stop within 75 m of the
-  next stop for 2 minutes and Truckie does what the green button does, then opens navigation to
+- **Auto-complete on arrival** (v0.5, off until you turn it on in ⋮): stop within 250 m of the
+  next stop for 2 minutes (the stop timer, 1:00 to 3:00 in ⋮) and Truckie does what the green button does, then opens navigation to
   the next stop after 5 seconds. See [Auto-complete on arrival](#auto-complete-on-arrival).
 - **Tap a stop** to navigate there, switch pickup/delivery, or remove it.
 - **Menu (⋮):** Google Maps or Waze, **Auto-complete on arrival** (with arrival zone and
@@ -36,9 +36,9 @@ Turn on in **⋮ > Auto-complete on arrival**. A stop is ticked off only when **
 - It is the **next** stop (top of the list). Other stops are never checked, so the house next door can't fire.
 - The vehicle was seen **driving** (15 km/h or faster) since this became the next stop. Opening
   Truckie while already parked, or two stops on one street without moving the truck, needs a tap.
-- A GPS reading accurate to **±30 m or better** puts you inside the **arrival zone** (75 m by
-  default; ⋮ > Arrival zone switches 50 / 75 / 100 m). Less accurate readings are ignored.
-- You stay **under 7 km/h for 2 minutes straight** (walking to the door still counts). Leaving the
+- A GPS reading accurate to **±30 m or better** puts you inside the **arrival zone** (250 m by
+  default for big industrial sites; ⋮ > Arrival zone switches 100 / 150 / 250 m). Less accurate readings are ignored.
+- You stay **under 7 km/h for the stop timer** (2:00 by default; ⋮ > Stop timer switches 1:00 / 1:30 / 2:00 / 2:30 / 3:00) (walking to the door still counts). Leaving the
   zone or driving off resets the clock to zero.
 
 Then: the stop is struck out, a notification says **Done: <address>** with **Undo** and
@@ -53,6 +53,9 @@ it won't auto-complete again until you've driven out of its zone. **Restore** un
 - **Open Maps by itself:** Android blocks a background app from opening Maps. Turn on **⋮ > Open
   Maps by itself** (Android's "Display over other apps" switch for Truckie) and the next stop opens
   hands-free. Without it, the notification's **Navigate** button is one tap.
+- **GPS indicator:** while auto-complete is on, a small crosshair in the lower left shows what it
+  sees: **yellow** with the distance when you're outside the zone, **green** inside it, and the
+  stop-timer countdown once you're stopped there.
 - **Pins:** a stop's position comes from the address search. If the pin is more than the zone away
   from where you park, the stop simply won't auto-complete: tap the green button as usual.
 
@@ -93,10 +96,12 @@ key and billing) is a change to `Osrm.kt` and `MainViewModel.optimize()` only.
 
 ## Install
 
-- Newest release: https://github.com/FaradayMicrosystems/truckie/releases/latest
+- **Stable** (what drivers should use): https://github.com/FaradayMicrosystems/truckie/releases/latest
   (download `truckie-vX.Y.apk` under **Assets**).
-- All releases: https://github.com/FaradayMicrosystems/truckie/releases. The `latest` pre-release
-  there holds `truckie-debug.apk`, rebuilt from every push to main (it's briefly missing while a build replaces it).
+- **Experimental** (newest work, may break): always the newest build at
+  https://github.com/FaradayMicrosystems/truckie/releases/tag/experimental
+  The page holds one APK, named with its version (e.g. `truckie-v0.6.1e-build50.apk`), and the same
+  version shows in the app. Each build is also kept as its own `vX.Y.Ze+N` pre-release.
 
 The repo is private, so these links only work while signed in to GitHub with access to it.
 Open the APK on an Android 8.0+ phone and allow installs from that source when asked.
@@ -126,9 +131,26 @@ and `./gradlew :core:test` for the unit tests.
 
 ## Releases
 
-Raise `versionName` (and `versionCode`) in `app/build.gradle.kts`, add a `## vX.Y` section to
-`CHANGELOG.md`, and push to main. The build publishes "Truckie vX.Y" with `truckie-vX.Y.apk`,
-which is what the in-app update check finds.
+**Version numbers (X.Y.Z, always three digits):** X = primary releases only. Y = changes users
+will notice: features, experimental features, anything that changes how Truckie works. Z = minor
+fixes and cosmetic tweaks (colours, design, logo). Experimental builds carry the letter
+**e** (experimental), e.g. `0.5.3e`; stable releases carry no letter. (Builds before 0.5.3e+40 used
+a alpha, b beta, c release candidate; they still update normally.)
+
+| Branch | `baseVersionName` in `app/build.gradle.kts` | Each push publishes | Who gets it |
+|---|---|---|---|
+| `main` | `"0.6.0"` | full release `v0.6.0` (`truckie-v0.6.0.apk`) | stable installs |
+| `experimental` | `"0.6.1e"` | pre-release `v0.6.1e+<build>` (`truckie-v0.6.1e-build<build>.apk`) | experimental installs |
+
+- **All new work** goes in a PR to `experimental` (the default branch). Its CHANGELOG section reads
+  `## v0.6.1 — unreleased (experimental)`.
+- **Full release** (only when Aurora says so): a PR from `experimental` to `main` that drops the
+  letter ("0.6.1") and dates the CHANGELOG heading. Merging it publishes `v0.6.1`. Then
+  `experimental` moves on to the next version with the e letter. The next number depends on the change:
+  Z for fixes and behind-the-scenes work, Y for features users notice.
+- `versionCode` is GitHub's build number (the `+<build>`), so every new APK installs over every older one.
+- The in-app update check follows the install's channel: stable installs only see full releases;
+  experimental installs see newer e builds and the matching stable release.
 
 ## Project layout
 

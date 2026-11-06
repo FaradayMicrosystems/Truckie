@@ -1,5 +1,36 @@
 # Changelog
 
+Versions follow X.Y.Z: X for primary releases, Y for user-visible changes and features, Z for minor
+fixes and looks (colours, design, logo). Experimental builds carry the letter e (experimental);
+stable releases carry none. Stable releases come from `main`. Work in progress lands on `experimental`
+first as `vX.Y.Ze+<build>` and is listed below as "unreleased" until Aurora calls a full release.
+
+## v0.6.0 — 2026-11-06
+
+Full release of everything tested on experimental (the last test build was `v0.5.3e+41`).
+
+- **Experimental builds are now `e` versions** (`v0.5.3e+40`), and every experimental APK is named with
+  its version (`truckie-v0.5.3e-build40.apk`), so a download can never be mistaken for another build.
+  The app shows the same version. The fixed link is now the page
+  https://github.com/FaradayMicrosystems/truckie/releases/tag/experimental, which holds only the newest
+  APK. Older `a` builds update to the `e` builds normally.
+
+- **Two release channels.** `main` is stable (v0.5.2 for now) and only changes on a full release.
+  All new work goes to `experimental`, and each change there publishes a pre-release such as
+  `v0.5.3a+28` (alpha of 0.5.3, build 28). Stable installs only ever update to stable releases.
+  Experimental installs update to newer a/b/c builds, and to the stable release once it ships.
+- Build numbers come from GitHub, so any newer APK installs over any older one on either channel.
+- **GPS test indicator** (lower left, while auto-complete is on): a small location crosshair that is
+  **yellow** outside the next stop's arrival zone and **green** inside it, with the distance, or the
+  **2:00 countdown** while you're stopped in the zone. Lets you see auto-complete working while testing.
+- **Stop timer** in the ⋮ menu (under Arrival zone): how long you stay stopped in the zone before the
+  stop is ticked off. 1:00, 1:30, 2:00 (default), 2:30 or 3:00. The GPS indicator counts down from it.
+- **Arrival zone is now 250 m by default** (choices 100 / 150 / 250 m), because big industrial sites put
+  the parking well away from the address. A saved 50/75 m setting moves to 250 m.
+- The rolling `latest` debug build is retired: the newest experimental pre-release replaces it.
+- The first experimental build went out as `v0.6-exp.27`, numbered wrongly: it is 0.5.3 alpha
+  (a behind-the-scenes change is a Z bump). It still updates to the `v0.5.3a+…` builds.
+
 ## v0.5.2 — 2026-11-05
 
 - **Reverted v0.5.1's "Android Auto only" navigation.** Navigate opens Maps or Waze on the phone

@@ -37,11 +37,19 @@ class ArrivalTest {
         assertIs<ArrivalState.Heading>(d.onFix(stop, fix(20.0, 600, 0.0)))
     }
 
+    @Test fun headingSaysWhetherInsideTheZone() {
+        // Drives for the GPS indicator: yellow outside, green inside.
+        val d = ArrivalDetector()
+        assertEquals(false, (d.onFix(stop, fix(1000.0, 0, 50.0)) as ArrivalState.Heading).inside)
+        assertEquals(false, (d.onFix(stop, fix(300.0, 10, 50.0)) as ArrivalState.Heading).inside)
+        assertEquals(true, (d.onFix(stop, fix(200.0, 20, 50.0)) as ArrivalState.Heading).inside) // inside but still moving
+    }
+
     @Test fun neverFiresOutsideTheZone() {
         val d = ArrivalDetector()
         d.onFix(stop, fix(1000.0, 0, 50.0))
-        // Parked 90 m away (outside the 75 m default) for 10 minutes.
-        for (t in 60L..660L step 10) assertIs<ArrivalState.Heading>(d.onFix(stop, fix(90.0, t, 0.0)))
+        // Parked 300 m away (outside the 250 m default) for 10 minutes.
+        for (t in 60L..660L step 10) assertIs<ArrivalState.Heading>(d.onFix(stop, fix(300.0, t, 0.0)))
     }
 
     @Test fun drivingPastNeverFires() {
@@ -100,5 +108,14 @@ class ArrivalTest {
         val d = ArrivalDetector()
         assertEquals(ArrivalState.Idle, d.onFix(null, fix(0.0, 0, 0.0)))
         assertEquals(ArrivalState.Idle, d.onFix(stop.copy(doneAt = 1), fix(0.0, 0, 0.0)))
+    }
+
+    @Test fun stopTimerIsAdjustable() {
+        val d = ArrivalDetector(ArrivalRules(dwellMillis = 60_000))
+        d.onFix(stop, fix(1000.0, 0, 50.0))
+        d.onFix(stop, fix(300.0, 60, 40.0))
+        assertEquals(ArrivalState.Waiting(1, 60), d.onFix(stop, fix(20.0, 100, 0.0)))
+        assertEquals(ArrivalState.Arrived(1), d.onFix(stop, fix(20.0, 160, 0.0)))
+        assertEquals(listOf("1:00", "1:30", "2:00", "2:30", "3:00"), ArrivalRules.DWELL_CHOICES_SECONDS.map { ArrivalRules.mmss(it) })
     }
 }

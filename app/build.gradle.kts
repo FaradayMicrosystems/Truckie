@@ -16,6 +16,16 @@ val localProps = Properties().apply {
 fun prop(name: String, default: String = "") = localProps.getProperty(name, default)
 fun quoted(name: String, default: String = "") = "\"${prop(name, default)}\""
 
+// The version this branch builds, Aurora's X.Y.Z rule: X primary releases, Y user-visible changes
+// and features, Z minor fixes and looks. main: stable, no letter ("0.6.0"). experimental: the next
+// version plus e (experimental), e.g. "0.6.1e". Pick the next number
+// from what the change is (Z for fixes and behind-the-scenes, Y for features users notice).
+// CI reads this line, so keep it as one plain string.
+val baseVersionName = "0.6.0"
+
+// GitHub Actions' run number: always rising, across both branches.
+val ciBuild: Int? = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull()?.takeIf { it > 11 }
+
 // Truckie's one permanent signing key lives in signing/ (private repo); local.properties can override it.
 val signingProps = Properties().apply {
     val f = rootProject.file("signing/signing.properties")
@@ -31,8 +41,10 @@ android {
         applicationId = "app.truckie"
         minSdk = 26
         targetSdk = 35
-        versionCode = 11
-        versionName = "0.5.2"
+        // GitHub builds of experimental add their build counter ("0.5.3a+31"), and every GitHub build
+        // uses it as versionCode, so each new APK installs over every older one on either channel.
+        versionCode = ciBuild ?: 11
+        versionName = if (baseVersionName.last() in "abce" && ciBuild != null) "$baseVersionName+$ciBuild" else baseVersionName
         buildConfigField("String", "UPDATE_REPO", "\"FaradayMicrosystems/truckie\"")
         // Never commit the token here: it comes from local.properties or the CI secret.
         buildConfigField("String", "UPDATE_TOKEN", quoted("UPDATE_TOKEN"))

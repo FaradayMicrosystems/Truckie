@@ -5,7 +5,13 @@ fixes and looks (colours, design, logo). Experimental builds carry the letter e 
 stable releases carry none. Stable releases come from `main`. Work in progress lands on `experimental`
 first as `vX.Y.Ze+<build>` and is listed below as "unreleased" until Aurora calls a full release.
 
-## v0.5.3 — unreleased (experimental)
+## v0.6.1 — unreleased (experimental)
+
+- Experimental line after the v0.6.0 release. Nothing new yet.
+
+## v0.6.0 — 2026-11-06
+
+Full release of everything tested on experimental (the last test build was `v0.5.3e+41`).
 
 - **Experimental builds are now `e` versions** (`v0.5.3e+40`), and every experimental APK is named with
   its version (`truckie-v0.5.3e-build40.apk`), so a download can never be mistaken for another build.

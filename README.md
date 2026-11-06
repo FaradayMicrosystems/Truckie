@@ -5,7 +5,7 @@ them in a good order, and hands Google Maps (or Waze) one stop at a time. Google
 Truckie decides where to go next. That stops Google Maps inserting new stops mid-route and gets
 around Waze's stop limit.
 
-## What works in v0.5
+## What works in v0.6.0
 
 - **Add stops** by typing an address, `lat,lng`, or pasting a Google Maps link. New stops always
   go on the **end** of the list, in the order you add them. Tick **Pickup** for a pickup.
@@ -53,6 +53,9 @@ it won't auto-complete again until you've driven out of its zone. **Restore** un
 - **Open Maps by itself:** Android blocks a background app from opening Maps. Turn on **⋮ > Open
   Maps by itself** (Android's "Display over other apps" switch for Truckie) and the next stop opens
   hands-free. Without it, the notification's **Navigate** button is one tap.
+- **GPS indicator:** while auto-complete is on, a small crosshair in the lower left shows what it
+  sees: **yellow** with the distance when you're outside the zone, **green** inside it, and the
+  stop-timer countdown once you're stopped there.
 - **Pins:** a stop's position comes from the address search. If the pin is more than the zone away
   from where you park, the stop simply won't auto-complete: tap the green button as usual.
 
@@ -97,7 +100,7 @@ key and billing) is a change to `Osrm.kt` and `MainViewModel.optimize()` only.
   (download `truckie-vX.Y.apk` under **Assets**).
 - **Experimental** (newest work, may break): always the newest build at
   https://github.com/FaradayMicrosystems/truckie/releases/tag/experimental
-  The page holds one APK, named with its version (e.g. `truckie-v0.5.3e-build40.apk`), and the same
+  The page holds one APK, named with its version (e.g. `truckie-v0.6.1e-build50.apk`), and the same
   version shows in the app. Each build is also kept as its own `vX.Y.Ze+N` pre-release.
 
 The repo is private, so these links only work while signed in to GitHub with access to it.
@@ -136,13 +139,13 @@ a alpha, b beta, c release candidate; they still update normally.)
 
 | Branch | `baseVersionName` in `app/build.gradle.kts` | Each push publishes | Who gets it |
 |---|---|---|---|
-| `main` | `"0.5.3"` | full release `v0.5.3` (`truckie-v0.5.3.apk`) | stable installs |
-| `experimental` | `"0.5.4e"` | pre-release `v0.5.4e+<build>` (`truckie-v0.5.4e-build<build>.apk`) | experimental installs |
+| `main` | `"0.6.0"` | full release `v0.6.0` (`truckie-v0.6.0.apk`) | stable installs |
+| `experimental` | `"0.6.1e"` | pre-release `v0.6.1e+<build>` (`truckie-v0.6.1e-build<build>.apk`) | experimental installs |
 
 - **All new work** goes in a PR to `experimental` (the default branch). Its CHANGELOG section reads
-  `## v0.5.4 — unreleased (experimental)`.
+  `## v0.6.1 — unreleased (experimental)`.
 - **Full release** (only when Aurora says so): a PR from `experimental` to `main` that drops the
-  letter ("0.5.4") and dates the CHANGELOG heading. Merging it publishes `v0.5.4`. Then
+  letter ("0.6.1") and dates the CHANGELOG heading. Merging it publishes `v0.6.1`. Then
   `experimental` moves on to the next version with the e letter. The next number depends on the change:
   Z for fixes and behind-the-scenes work, Y for features users notice.
 - `versionCode` is GitHub's build number (the `+<build>`), so every new APK installs over every older one.

@@ -7,7 +7,11 @@ first as `vX.Y.Ze+<build>` and is listed below as "unreleased" until Aurora call
 
 ## v0.6.1 — unreleased (experimental)
 
-- Experimental line after the v0.6.0 release. Nothing new yet.
+- **Android Auto: works with sideloaded installs again.** Android Auto 17+ only lists apps installed by
+  Google Play, so Truckie must be installed with the installer set to `com.android.vending` (Shizuku +
+  Install with Options, or `adb install -i`). New **⋮ > Android Auto: check setup** says whether this
+  install qualifies and how to fix it. **Update now** on a qualifying install opens the APK in Install
+  with Options, so an update doesn't hide Truckie from Android Auto again. (Z bump: a compatibility fix.)
 
 ## v0.6.0 — 2026-11-06
 

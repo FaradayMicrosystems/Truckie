@@ -68,9 +68,20 @@ it won't auto-complete again until you've driven out of its zone. **Restore** un
   (auto-yes after 5 s) when Truckie is on the car screen. While Maps is on the car screen, the
   **Done** alert pops up there with **Navigate** and **Undo** buttons.
 - Add and drag stops on the phone; Android Auto doesn't allow typing or dragging.
-- **To see Truckie in the car** (sideloaded apps are hidden by default): open Android Auto settings
-  on the phone, tap **Version** about 10 times to unlock developer settings, then in the ⋮ menu >
-  **Developer settings**, turn on **Unknown sources**. Reconnect to the car.
+- **To see Truckie in the car.** Android Auto 17 and later only lists apps that **Google Play
+  installed**, even with Unknown sources on (its log says "Package DENIED"). So Truckie has to be
+  installed with the installer set to Play. Do this once:
+  1. Install **Shizuku** (Play Store) and start it (Wireless debugging, as its own guide shows).
+  2. Install **Install with Options** (github.com/zacharee/InstallWithOptions) and allow it in Shizuku.
+  3. Download the Truckie APK. In Install with Options, pick it, turn on the **installer package**
+     option and set it to `com.android.vending`, then install. (From a PC instead:
+     `adb install -r -i com.android.vending truckie.apk`.)
+  4. Android Auto settings: tap **Version** about 10 times, then ⋮ > **Developer settings** >
+     tick **Unknown sources**. Reconnect to the car.
+  - **⋮ > Android Auto: check setup** says whether this install is Android Auto ready, and who installed it.
+  - **Updates keep it working:** on an Android Auto ready install, **Update now** opens the new APK in
+    Install with Options rather than Android's installer (which would make Truckie the installer and
+    hide it from Android Auto again). Set the installer to `com.android.vending` there each time.
 
 Switches in `app/src/main/java/app/truckie/Features.kt` turn built features on or off. The full
 route solver (`ROUTE_SOLVER`) and the menu re-order items (`MANUAL_REORDER`) are off.

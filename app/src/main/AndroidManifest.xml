@@ -17,6 +17,8 @@
     <queries>
         <package android:name="com.google.android.apps.maps" />
         <package android:name="com.waze" />
+        <!-- Android Auto install helper (Shizuku based); used to keep the Play installer on updates. -->
+        <package android:name="dev.zwander.installwithoptions" />
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="google.navigation" />

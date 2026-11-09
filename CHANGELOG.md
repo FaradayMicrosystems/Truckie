@@ -5,7 +5,18 @@ fixes and looks (colours, design, logo). Experimental builds carry the letter e 
 stable releases carry none. Stable releases come from `main`. Work in progress lands on `experimental`
 first as `vX.Y.Ze+<build>` and is listed below as "unreleased" until Aurora calls a full release.
 
-## v0.6.1 — unreleased (experimental)
+## v0.7.0 — unreleased (experimental)
+
+- **The whole screen scrolls as one.** The next-stop card, the add-stop box and every stop are now one
+  list, so the run gets the room on any window size, including split screen and pop-up windows.
+- **Title bar slides away** as you scroll down the run and comes back as soon as you scroll up.
+- **Smaller next-stop card.** Shorter Navigate and green buttons (64 instead of 80 high), address on two
+  lines. Tap **▴ Fold** to fold it to one slim line with the address and small **Navigate** and
+  **Done ✓** buttons. Truckie remembers your choice, and starts folded in a short window.
+- **Easier to read stops:** bigger address text, a numbered round badge (amber for pickups), and the
+  next stop in bold. Done stops are one grey line each with a tick.
+- **Progress bar:** "12 of 30 done" over the list.
+- **Add-stop row is one line:** the Pickup switch now sits inside the address box.
 
 - **Android Auto: works with sideloaded installs again.** Android Auto 17+ only lists apps installed by
   Google Play, so Truckie must be installed with the installer set to `com.android.vending` (Shizuku +

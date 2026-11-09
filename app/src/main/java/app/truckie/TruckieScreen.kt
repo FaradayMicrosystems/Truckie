@@ -9,6 +9,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -21,6 +22,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -63,6 +65,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.platform.ViewConfiguration
@@ -101,12 +106,27 @@ fun TruckieScreen(state: UiState, vm: MainViewModel, navigate: (Stop) -> Unit, a
     var menuOpen by remember { mutableStateOf(false) }
     var confirmClear by remember { mutableStateOf(false) }
     var showDone by rememberSaveable { mutableStateOf(false) }
+    val context = LocalContext.current
+    val prefs = remember { Prefs(context) }
+    // Folded next-stop card. Starts folded in a short window (split screen) the first time.
+    val shortWindow = LocalConfiguration.current.screenHeightDp < 500
+    var collapsed by rememberSaveable { mutableStateOf(prefs.headerCollapsed || shortWindow) }
+    val listState = rememberLazyListState()
+    // The title bar slides away as you scroll down the run and comes back as soon as you scroll up.
+    val barScroll = TopAppBarDefaults.enterAlwaysScrollBehavior(
+        canScroll = { listState.canScrollForward || listState.canScrollBackward },
+    )
 
     Scaffold(
+        modifier = Modifier.nestedScroll(barScroll.nestedScrollConnection),
         topBar = {
             TopAppBar(
                 title = { Text("Truckie") },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Navy, titleContentColor = Color.White, actionIconContentColor = Color.White),
+                scrollBehavior = barScroll,
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Navy, scrolledContainerColor = Navy,
+                    titleContentColor = Color.White, actionIconContentColor = Color.White,
+                ),
                 actions = {
                     if (Features.OPTIMIZE) {
                         // Wider, two lines: shows which mode Optimize will use before you tap.
@@ -172,16 +192,8 @@ fun TruckieScreen(state: UiState, vm: MainViewModel, navigate: (Stop) -> Unit, a
         },
     ) { pad ->
       Box(Modifier.padding(pad).fillMaxSize()) {
-        Column(Modifier.fillMaxSize().imePadding()) {
-            if (state.busy != null) {
-                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                Text(state.busy, Modifier.padding(horizontal = 16.dp, vertical = 4.dp), style = MaterialTheme.typography.bodySmall)
-            }
-            NextStopCard(state, onComplete = vm::completeNext, navigate = navigate)
-            ArrivalLine(state)
-            state.note?.let { Text(it, Modifier.padding(horizontal = 16.dp, vertical = 4.dp), style = MaterialTheme.typography.bodyMedium) }
-            AddStopRow(enabled = state.busy == null, onAdd = vm::addStop)
-            val listState = rememberLazyListState()
+            // v0.7.0: the whole screen is one scrolling list (next-stop card, add row and every stop),
+            // so it works at any window size, including split screen.
             val haptics = LocalHapticFeedback.current
             val reorderState = rememberReorderableLazyListState(listState) { from, to ->
                 // Only open stops are drop targets; their keys are stop ids.
@@ -192,10 +204,35 @@ fun TruckieScreen(state: UiState, vm: MainViewModel, navigate: (Stop) -> Unit, a
             }
             val baseConfig = LocalViewConfiguration.current
             val holdConfig = remember(baseConfig) { HoldToDragConfiguration(baseConfig) }
-            LazyColumn(Modifier.weight(1f), state = listState) {
+            LazyColumn(
+                Modifier.fillMaxSize().imePadding(),
+                state = listState,
+                // Room at the bottom so the GPS badge never covers the last stop.
+                contentPadding = PaddingValues(bottom = if (state.arrivalRunning) 64.dp else 16.dp),
+            ) {
+                state.busy?.let { busy -> item(key = "busy") {
+                    Column {
+                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                        Text(busy, Modifier.padding(horizontal = 16.dp, vertical = 4.dp), style = MaterialTheme.typography.bodySmall)
+                    }
+                } }
+                item(key = "next-card") {
+                    NextStopCard(
+                        state,
+                        collapsed = collapsed,
+                        onToggle = { collapsed = !collapsed; prefs.headerCollapsed = collapsed },
+                        onComplete = vm::completeNext,
+                        navigate = navigate,
+                    )
+                }
+                item(key = "arrival-line") { ArrivalLine(state) }
+                state.note?.let { note ->
+                    item(key = "note") { Text(note, Modifier.padding(horizontal = 16.dp, vertical = 4.dp), style = MaterialTheme.typography.bodyMedium) }
+                }
+                item(key = "add-row") { AddStopRow(enabled = state.busy == null, onAdd = vm::addStop) }
                 val open = state.stops.open
                 item(key = "todo-header") {
-                    SectionLabel(if (Features.DRAG_REORDER && open.size > 1) "To do (${open.size}) · hold a stop to drag it" else "To do (${open.size})")
+                    RunHeader(open = open.size, done = state.stops.done.size, canDrag = Features.DRAG_REORDER && open.size > 1)
                 }
                 itemsIndexed(open, key = { _, stop -> stop.id }) { index, stop ->
                     ReorderableItem(reorderState, key = stop.id, enabled = Features.DRAG_REORDER) { isDragging ->
@@ -233,7 +270,6 @@ fun TruckieScreen(state: UiState, vm: MainViewModel, navigate: (Stop) -> Unit, a
                     if (showDone) items(done, key = { "done-${it.id}" }) { stop -> DoneStopRow(stop, onRestore = { vm.restore(stop.id) }) }
                 }
             }
-        }
         if (state.arrivalRunning) GpsBadge(state.arrival, Modifier.align(Alignment.BottomStart).padding(12.dp))
       }
     }
@@ -284,54 +320,93 @@ fun TruckieScreen(state: UiState, vm: MainViewModel, navigate: (Stop) -> Unit, a
 }
 
 @Composable
-private fun NextStopCard(state: UiState, onComplete: () -> Unit, navigate: (Stop) -> Unit) {
+private fun NextStopCard(
+    state: UiState,
+    collapsed: Boolean,
+    onToggle: () -> Unit,
+    onComplete: () -> Unit,
+    navigate: (Stop) -> Unit,
+) {
     val next = state.stops.next
     Card(
-        Modifier.fillMaxWidth().padding(12.dp),
+        Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
     ) {
-        Column(Modifier.padding(16.dp)) {
-            if (next == null) {
-                Text("No stops to do", style = MaterialTheme.typography.titleLarge)
+        if (next == null) {
+            Column(Modifier.padding(12.dp)) {
+                Text("No stops to do", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                 Text("Type an address below. New stops go on the end of the list.", style = MaterialTheme.typography.bodyMedium)
-                return@Column
             }
-            val left = state.stops.open.size
-            Text(
-                "NEXT · ${if (next.type == StopType.PICKUP) "PICKUP" else "DELIVERY"} · $left to go",
-                style = MaterialTheme.typography.labelLarge, color = Navy,
-            )
-            Text(next.address, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold, maxLines = 3, overflow = TextOverflow.Ellipsis)
-            Spacer(Modifier.height(12.dp))
+            return@Card
+        }
+        val left = state.stops.open.size
+        val kind = if (next.type == StopType.PICKUP) "PICKUP" else "DELIVERY"
+        if (collapsed) {
+            // One slim row: tap the address to unfold; both buttons stay in reach.
+            Row(
+                Modifier.fillMaxWidth().padding(start = 12.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Column(Modifier.weight(1f).clickable(onClick = onToggle)) {
+                    Text("NEXT · $kind · $left to go  ▾", style = MaterialTheme.typography.labelMedium, color = Navy, maxLines = 1)
+                    Text(next.address, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+                PillButton("Navigate", NavBlue, Modifier.height(48.dp)) { navigate(next) }
+                PillButton("Done ✓", DoneGreen, Modifier.height(48.dp), onClick = onComplete)
+            }
+            return@Card
+        }
+        Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+            Row(Modifier.fillMaxWidth().clickable(onClick = onToggle), verticalAlignment = Alignment.CenterVertically) {
+                Text("NEXT · $kind · $left to go", Modifier.weight(1f), style = MaterialTheme.typography.labelLarge, color = Navy)
+                Text("▴ Fold", style = MaterialTheme.typography.labelMedium, color = Navy, modifier = Modifier.padding(start = 8.dp, top = 4.dp, bottom = 4.dp))
+            }
+            Text(next.address, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Spacer(Modifier.height(8.dp))
             // Two pill buttons, colour-coded so they can't be mixed up at a glance:
             // blue Navigate on the left, green done on the right.
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Button(
                     onClick = { navigate(next) },
-                    modifier = Modifier.weight(1f).height(80.dp),
+                    modifier = Modifier.weight(1f).height(64.dp),
                     shape = RoundedCornerShape(percent = 50),
                     colors = ButtonDefaults.buttonColors(containerColor = NavBlue, contentColor = Color.White),
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Navigate", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                        Text("Navigate", fontSize = 18.sp, fontWeight = FontWeight.Bold)
                         Text(state.navApp.label, fontSize = 12.sp)
                     }
                 }
                 Button(
                     onClick = onComplete,
-                    modifier = Modifier.weight(1f).height(80.dp),
+                    modifier = Modifier.weight(1f).height(64.dp),
                     shape = RoundedCornerShape(percent = 50),
                     colors = ButtonDefaults.buttonColors(containerColor = DoneGreen, contentColor = Color.White),
                 ) {
                     Text(
                         DONE_LABEL,
-                        fontSize = 18.sp,
+                        fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center,
+                        lineHeight = 18.sp,
                     )
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun PillButton(label: String, colour: Color, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
+        modifier = modifier,
+        shape = RoundedCornerShape(percent = 50),
+        colors = ButtonDefaults.buttonColors(containerColor = colour, contentColor = Color.White),
+        contentPadding = PaddingValues(horizontal = 14.dp),
+    ) {
+        Text(label, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1)
     }
 }
 
@@ -345,22 +420,28 @@ private fun AddStopRow(enabled: Boolean, onAdd: (String, StopType) -> Unit) {
             text = ""
         }
     }
-    Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
         OutlinedTextField(
             value = text,
             onValueChange = { text = it },
             modifier = Modifier.weight(1f),
             singleLine = true,
             placeholder = { Text("Add stop: address or lat,lng") },
+            // Pickup toggle sits inside the box so the add row is one line high.
+            trailingIcon = {
+                FilterChip(
+                    selected = pickup,
+                    onClick = { pickup = !pickup },
+                    label = { Text("Pickup") },
+                    modifier = Modifier.padding(end = 6.dp),
+                )
+            },
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
             keyboardActions = KeyboardActions(onDone = { submit() }),
             enabled = enabled,
         )
         Spacer(Modifier.width(8.dp))
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            FilterChip(selected = pickup, onClick = { pickup = !pickup }, label = { Text("Pickup") })
-            Button(onClick = submit, enabled = enabled && text.isNotBlank()) { Text("Add") }
-        }
+        Button(onClick = submit, enabled = enabled && text.isNotBlank()) { Text("Add") }
     }
 }
 
@@ -369,9 +450,25 @@ private class HoldToDragConfiguration(base: ViewConfiguration) : ViewConfigurati
     override val longPressTimeoutMillis: Long = Features.DRAG_HOLD_MILLIS
 }
 
+/** "To do" heading with a progress bar: how far through the run you are. */
 @Composable
-private fun SectionLabel(text: String) {
-    Text(text, Modifier.padding(16.dp, 12.dp, 16.dp, 4.dp), style = MaterialTheme.typography.titleSmall)
+private fun RunHeader(open: Int, done: Int, canDrag: Boolean) {
+    val total = open + done
+    Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 4.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("To do ($open)", Modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            if (total > 0) Text("$done of $total done", style = MaterialTheme.typography.labelLarge, color = DoneGreen)
+        }
+        if (total > 0) {
+            Spacer(Modifier.height(4.dp))
+            LinearProgressIndicator(
+                progress = { done.toFloat() / total },
+                modifier = Modifier.fillMaxWidth().height(4.dp),
+                color = DoneGreen,
+            )
+        }
+        if (canDrag) Text("Tap a stop for options · hold to drag it", style = MaterialTheme.typography.bodySmall, color = Color.Gray, modifier = Modifier.padding(top = 4.dp))
+    }
 }
 
 @Composable
@@ -379,14 +476,28 @@ private fun OpenStopRow(number: Int, stop: Stop, vm: MainViewModel, navigate: (S
     var menu by remember { mutableStateOf(false) }
     Box {
         Row(
-            Modifier.fillMaxWidth().then(dragModifier).clickable { menu = true }.padding(horizontal = 16.dp, vertical = 12.dp),
+            Modifier.fillMaxWidth().then(dragModifier).clickable { menu = true }.padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text("$number", style = MaterialTheme.typography.titleMedium, color = Navy, modifier = Modifier.width(28.dp))
+            // Numbered badge: navy for deliveries, amber for pickups, so pickups stand out down the list.
+            val pickup = stop.type == StopType.PICKUP
+            Box(
+                Modifier.size(32.dp).background(if (pickup) Amber else Navy, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text("$number", color = if (pickup) Color.Black else Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            }
             Column(Modifier.weight(1f)) {
-                Text(stop.address, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                if (stop.type == StopType.PICKUP) Text("Pickup", style = MaterialTheme.typography.labelSmall, color = Amber)
+                Text(
+                    stop.address,
+                    fontSize = 17.sp,
+                    lineHeight = 21.sp,
+                    fontWeight = if (number == 1) FontWeight.Bold else FontWeight.Medium,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                if (pickup) Text("PICKUP", style = MaterialTheme.typography.labelSmall, color = Color(0xFF9A6B00), fontWeight = FontWeight.Bold)
             }
         }
         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
@@ -409,13 +520,15 @@ private fun OpenStopRow(number: Int, stop: Stop, vm: MainViewModel, navigate: (S
 
 @Composable
 private fun DoneStopRow(stop: Stop, onRestore: () -> Unit) {
-    Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text("✓", color = DoneGreen, fontWeight = FontWeight.Bold, modifier = Modifier.width(24.dp))
         Text(
             stop.address,
-            Modifier.weight(1f).padding(vertical = 8.dp),
+            Modifier.weight(1f).padding(vertical = 4.dp),
+            style = MaterialTheme.typography.bodyMedium,
             textDecoration = TextDecoration.LineThrough,
             color = Color.Gray,
-            maxLines = 2,
+            maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
         TextButton(onClick = onRestore) { Text("Restore") }

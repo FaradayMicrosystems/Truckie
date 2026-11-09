@@ -289,10 +289,33 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             _state.update { it.copy(updateBusy = false) }
             apk.onFailure { e -> _state.update { it.copy(update = null, note = "Update download failed (${e.message}). It'll ask again next launch.") } }
             apk.onSuccess { file ->
-                if (Updater.install(ctx, file)) _state.update { it.copy(update = null) }
-                else _state.update { it.copy(note = "Allow Truckie to install apps, then tap Update now again.") }
+                val aaReady = Updater.androidAutoReady(ctx)
+                when (Updater.install(ctx, file)) {
+                    InstallRoute.INSTALL_WITH_OPTIONS -> _state.update {
+                        it.copy(update = null, note = "Opened in Install with Options. Turn on its installer option, set it to ${Updater.PLAY_STORE}, then Install, so Android Auto keeps showing Truckie.")
+                    }
+                    InstallRoute.ANDROID_INSTALLER -> _state.update {
+                        it.copy(update = null, note = if (aaReady) "Heads up: installing this way can hide Truckie in Android Auto again. Install with Options isn't on this phone, so redo the Play-installer install afterwards (⋮ > Android Auto)." else null)
+                    }
+                    InstallRoute.NEEDS_PERMISSION -> _state.update { it.copy(note = "Allow Truckie to install apps, then tap Update now again.") }
+                }
             }
         }
+    }
+
+    /** ⋮ > Android Auto: says whether Android Auto will show Truckie, and how to fix it if not. */
+    fun androidAutoStatus() {
+        val ctx = getApplication<Application>()
+        val by = Updater.installer(ctx)
+        val note = if (by == Updater.PLAY_STORE) {
+            "Android Auto: ready. Truckie is installed with Google Play as its installer, so Android Auto can list it. " +
+                "If it still doesn't show: Android Auto settings > tap Version 10 times > ⋮ Developer settings > tick Unknown sources, then reconnect the car."
+        } else {
+            "Android Auto: hidden. Truckie was installed by ${by ?: "an unknown app"}, and Android Auto only lists apps installed by Google Play. " +
+                "Fix: with Shizuku running, open the Truckie APK in Install with Options, set the installer to ${Updater.PLAY_STORE}, and install. " +
+                "Or from a PC: adb install -r -i ${Updater.PLAY_STORE} truckie.apk"
+        }
+        _state.update { it.copy(note = note) }
     }
 
     fun checkForUpdates() {

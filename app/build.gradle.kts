@@ -35,12 +35,13 @@ fun signProp(name: String): String = prop(name).ifBlank { signingProps.getProper
 
 android {
     namespace = "app.truckie"
-    compileSdk = 35
+    // Google Play requires new apps to target API 36 (Android 16) since 31 Aug 2026.
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "app.truckie"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 36
         // GitHub builds of experimental add their build counter ("0.5.3a+31"), and every GitHub build
         // uses it as versionCode, so each new APK installs over every older one on either channel.
         versionCode = ciBuild ?: 11
@@ -48,6 +49,8 @@ android {
         buildConfigField("String", "UPDATE_REPO", "\"FaradayMicrosystems/truckie\"")
         // Never commit the token here: it comes from local.properties or the CI secret.
         buildConfigField("String", "UPDATE_TOKEN", quoted("UPDATE_TOKEN"))
+        // true only in the Google Play build (see the "play" build type below).
+        buildConfigField("boolean", "PLAY_BUILD", "false")
     }
 
     // One permanent key, committed in signing/ (private repo), so every build signs the same and
@@ -81,6 +84,18 @@ android {
         release {
             isMinifyEnabled = false
             if (keystore != null) signingConfig = signingConfigs.getByName("shared")
+        }
+        // Google Play build: ./gradlew :app:bundlePlay -> app/build/outputs/bundle/play/app-play.aab
+        // Signed with the same permanent key, which Play uses as the UPLOAD key (Play re-signs installs
+        // with its own app signing key). Differences from the GitHub builds, both required by Play policy:
+        //  - no GitHub update check or self-install (Play apps may only update through Play), and
+        //  - no REQUEST_INSTALL_PACKAGES permission (removed in src/play/AndroidManifest.xml).
+        create("play") {
+            initWith(getByName("release"))
+            matchingFallbacks += listOf("release")
+            buildConfigField("boolean", "PLAY_BUILD", "true")
+            // Never ship the GitHub token inside a Play download.
+            buildConfigField("String", "UPDATE_TOKEN", "\"\"")
         }
     }
 

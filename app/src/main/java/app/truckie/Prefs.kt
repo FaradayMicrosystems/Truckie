@@ -31,4 +31,9 @@ class Prefs(context: Context) {
     var arrivalRadiusM: Int
         get() = sp.getInt("arrivalRadiusM", ArrivalRules.DEFAULT_RADIUS_M).takeIf { it in ArrivalRules.RADIUS_CHOICES } ?: ArrivalRules.DEFAULT_RADIUS_M
         set(v) = sp.edit().putInt("arrivalRadiusM", v).apply()
+
+    /** v0.7.0: next-stop card folded down to one line, so more of the run fits on screen. */
+    var headerCollapsed: Boolean
+        get() = sp.getBoolean("headerCollapsed", false)
+        set(v) = sp.edit().putBoolean("headerCollapsed", v).apply()
 }

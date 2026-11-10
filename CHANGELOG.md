@@ -12,6 +12,11 @@ first as `vX.Y.Ze+<build>` and is listed below as "unreleased" until Aurora call
   Install with Options, or `adb install -i`). New **⋮ > Android Auto: check setup** says whether this
   install qualifies and how to fix it. **Update now** on a qualifying install opens the APK in Install
   with Options, so an update doesn't hide Truckie from Android Auto again. (Z bump: a compatibility fix.)
+- **Google Play build** (for Android Auto, which hides sideloaded apps). Every build now also makes
+  `truckie-v…-play.aab`, the file to upload in Play Console > Internal testing. The Play copy updates
+  through Google Play only (no GitHub update check, no install permission), as Play requires.
+  Listing text, Play Console answers and a privacy policy are in `docs/google-play/`.
+- Targets Android 16 (API 36), which Google Play requires for new apps. Build tools updated to match.
 
 ## v0.6.0 — 2026-11-06
 

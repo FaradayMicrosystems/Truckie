@@ -86,7 +86,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             }
         }
         viewModelScope.launch {
-            // On launch, only speak up when there is something to install.
+            // On launch, only speak up when there is something to install. Play copies update
+            // through Google Play only (Play policy bans self-updating), so they skip GitHub.
+            if (BuildConfig.PLAY_BUILD) return@launch
             val r = Updater.check()
             if (r is UpdateCheck.Newer) _state.update { it.copy(update = r.release) }
         }
@@ -317,6 +319,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun checkForUpdates() {
+        if (BuildConfig.PLAY_BUILD) {
+            _state.update { it.copy(note = "This copy of Truckie ${BuildConfig.VERSION_NAME} comes from Google Play: updates arrive through the Play Store.") }
+            return
+        }
         viewModelScope.launch {
             _state.update { it.copy(note = "Checking GitHub for updates…") }
             when (val r = Updater.check()) {

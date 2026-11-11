@@ -6,6 +6,12 @@ on:
   pull_request:
   workflow_dispatch:
 
+# Two quick pushes used to race: the older build could finish last and overwrite the fixed
+# "experimental" page with the older APK. One run per branch at a time, in push order.
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: ubuntu-latest

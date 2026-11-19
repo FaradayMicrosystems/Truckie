@@ -296,7 +296,7 @@ class ArrivalService : Service(), LocationListener {
 
         if (next != null) {
             b.addAction(0, "Navigate", PendingIntent.getActivity(
-                this, 3, Navigator.intent(prefs.navApp, next),
+                this, 3, Navigator.sideBySide(this, Navigator.intent(prefs.navApp, next)),
                 PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
             ))
             val carNav = Intent(ACTION_CAR_NAVIGATE, Uri.parse(NavApp.carGeoUri(next)))

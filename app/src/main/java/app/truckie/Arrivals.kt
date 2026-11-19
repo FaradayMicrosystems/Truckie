@@ -31,6 +31,9 @@ object Arrivals {
     /** True while the phone screen is visible: it shows its own 5-second countdown. */
     @Volatile var phoneVisible = false
 
+    /** v0.8.0: true while Truckie last sat in split screen or a pop-up window, so a background launch of Maps keeps to the other half. */
+    @Volatile var inMultiWindow = false
+
     /** True while Android Auto is connected and showing Truckie's car screens. */
     @Volatile var carConnected = false
 }

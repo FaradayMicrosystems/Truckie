@@ -5,6 +5,15 @@ fixes and looks (colours, design, logo). Experimental builds carry the letter e 
 stable releases carry none. Stable releases come from `main`. Work in progress lands on `experimental`
 first as `vX.Y.Ze+<build>` and is listed below as "unreleased" until Aurora calls a full release.
 
+## v0.8.0 — unreleased (experimental)
+
+- **Split screen: Truckie stays on screen.** With Truckie in split screen (or a pop-up window) beside
+  Google Maps or Waze, Navigate now opens the nav app in the **other half** instead of over Truckie.
+  If the nav app is already open in the other half, Truckie hands it the next stop there. Same for
+  auto-complete's "Open Maps by itself" and the notification's Navigate button. On by default; turn off
+  with **⋮ > Split screen: Maps in other half** if your phone acts up. If the phone refuses, Truckie
+  falls back to opening Maps the old way, so Navigate always works.
+
 ## v0.7.0 — unreleased (experimental)
 
 - **The whole screen scrolls as one.** The next-stop card, the add-stop box and every stop are now one

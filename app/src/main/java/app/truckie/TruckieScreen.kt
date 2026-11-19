@@ -111,6 +111,7 @@ fun TruckieScreen(state: UiState, vm: MainViewModel, navigate: (Stop) -> Unit, a
     // Folded next-stop card. Starts folded in a short window (split screen) the first time.
     val shortWindow = LocalConfiguration.current.screenHeightDp < 500
     var collapsed by rememberSaveable { mutableStateOf(prefs.headerCollapsed || shortWindow) }
+    var sideBySide by remember { mutableStateOf(prefs.splitScreenAdjacent) }
     val listState = rememberLazyListState()
     // The title bar slides away as you scroll down the run and comes back as soon as you scroll up.
     val barScroll = TopAppBarDefaults.enterAlwaysScrollBehavior(
@@ -159,6 +160,10 @@ fun TruckieScreen(state: UiState, vm: MainViewModel, navigate: (Stop) -> Unit, a
                                     )
                                 }
                             }
+                            DropdownMenuItem(
+                                text = { Text((if (sideBySide) "☑ " else "☐ ") + "Split screen: Maps in other half") },
+                                onClick = { sideBySide = !sideBySide; prefs.splitScreenAdjacent = sideBySide; menuOpen = false },
+                            )
                             HorizontalDivider()
                             DropdownMenuItem(
                                 text = { Text((if (state.autoComplete) "☑ " else "☐ ") + "Auto-complete on arrival") },

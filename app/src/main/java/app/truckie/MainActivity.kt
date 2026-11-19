@@ -50,11 +50,13 @@ class MainActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
         Arrivals.phoneVisible = true
+        Arrivals.inMultiWindow = isInMultiWindowMode
         vm.refreshArrivalSettings()
         ArrivalService.startIfWanted(this)
     }
 
     override fun onStop() {
+        Arrivals.inMultiWindow = isInMultiWindowMode
         Arrivals.phoneVisible = false
         super.onStop()
     }

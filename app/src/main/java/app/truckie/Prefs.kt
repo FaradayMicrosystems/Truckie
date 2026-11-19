@@ -36,4 +36,9 @@ class Prefs(context: Context) {
     var headerCollapsed: Boolean
         get() = sp.getBoolean("headerCollapsed", false)
         set(v) = sp.edit().putBoolean("headerCollapsed", v).apply()
+
+    /** v0.8.0: in split screen, open Maps/Waze in the other half so Truckie stays on screen. On by default. */
+    var splitScreenAdjacent: Boolean
+        get() = sp.getBoolean("splitScreenAdjacent", true)
+        set(v) = sp.edit().putBoolean("splitScreenAdjacent", v).apply()
 }

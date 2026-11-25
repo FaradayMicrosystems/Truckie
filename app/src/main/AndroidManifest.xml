@@ -19,6 +19,10 @@
         <package android:name="com.waze" />
         <!-- Android Auto install helper (Shizuku based); used to keep the Play installer on updates. -->
         <package android:name="dev.zwander.installwithoptions" />
+        <!-- v0.9.0: voice typing for saying several stops at once. -->
+        <intent>
+            <action android:name="android.speech.action.RECOGNIZE_SPEECH" />
+        </intent>
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="google.navigation" />

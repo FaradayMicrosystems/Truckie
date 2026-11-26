@@ -5,6 +5,17 @@ fixes and looks (colours, design, logo). Experimental builds carry the letter e 
 stable releases carry none. Stable releases come from `main`. Work in progress lands on `experimental`
 first as `vX.Y.Ze+<build>` and is listed below as "unreleased" until Aurora calls a full release.
 
+## v0.9.0 — unreleased (experimental)
+
+- **Add several stops by voice.** With the add box empty, tap **🎤** and say your stops in one go with
+  **"next"** (or "then", "next stop") between them, e.g. *"12 Smith Street Newtown, next 40 King Street
+  Penrith, next pickup 5 Depot Road Erskine Park"*. Truckie shows a check list of what it found: tap a
+  row for the next match, **✎** to retype a misheard one, **✕** to drop it, or the **Pickup** chip to
+  flip it. **Add all** puts them on the end in the order you said them. **🎤 Add more** keeps going.
+  Start a stop with "pickup" to make it a pickup (or turn on Pickup before tapping 🎤 to make them all
+  pickups). Plain "and" and commas don't split, since addresses carry them. Uses the phone's own voice
+  typing: no microphone permission, no API key.
+
 ## v0.8.0 — unreleased (experimental)
 
 - **Split screen: Truckie stays on screen.** With Truckie in split screen (or a pop-up window) beside

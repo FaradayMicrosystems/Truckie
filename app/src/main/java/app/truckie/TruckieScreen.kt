@@ -27,6 +27,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
@@ -102,7 +105,14 @@ fun TruckieTheme(content: @Composable () -> Unit) {
 }
 
 @Composable
-fun TruckieScreen(state: UiState, vm: MainViewModel, navigate: (Stop) -> Unit, allowOpenMaps: () -> Unit) {
+fun TruckieScreen(
+    state: UiState,
+    vm: MainViewModel,
+    navigate: (Stop) -> Unit,
+    allowOpenMaps: () -> Unit,
+    /** Starts voice typing for several stops; true when the Pickup chip is on. */
+    listen: (Boolean) -> Unit,
+) {
     var menuOpen by remember { mutableStateOf(false) }
     var confirmClear by remember { mutableStateOf(false) }
     var showDone by rememberSaveable { mutableStateOf(false) }
@@ -234,7 +244,7 @@ fun TruckieScreen(state: UiState, vm: MainViewModel, navigate: (Stop) -> Unit, a
                 state.note?.let { note ->
                     item(key = "note") { Text(note, Modifier.padding(horizontal = 16.dp, vertical = 4.dp), style = MaterialTheme.typography.bodyMedium) }
                 }
-                item(key = "add-row") { AddStopRow(enabled = state.busy == null, onAdd = vm::addStop) }
+                item(key = "add-row") { AddStopRow(enabled = state.busy == null, onAdd = vm::addStop, onListen = listen) }
                 val open = state.stops.open
                 item(key = "todo-header") {
                     RunHeader(open = open.size, done = state.stops.done.size, canDrag = Features.DRAG_REORDER && open.size > 1)
@@ -298,6 +308,7 @@ fun TruckieScreen(state: UiState, vm: MainViewModel, navigate: (Stop) -> Unit, a
             dismissButton = { TextButton(onClick = vm::dismissChoices) { Text("Cancel") } },
         )
     }
+    state.voice?.let { items -> VoiceCheckDialog(items, vm, onMore = { listen(false) }) }
     state.update?.let { r ->
         AlertDialog(
             onDismissRequest = {},
@@ -416,7 +427,7 @@ private fun PillButton(label: String, colour: Color, modifier: Modifier = Modifi
 }
 
 @Composable
-private fun AddStopRow(enabled: Boolean, onAdd: (String, StopType) -> Unit) {
+private fun AddStopRow(enabled: Boolean, onAdd: (String, StopType) -> Unit, onListen: (Boolean) -> Unit) {
     var text by rememberSaveable { mutableStateOf("") }
     var pickup by rememberSaveable { mutableStateOf(false) }
     val submit = {
@@ -445,8 +456,91 @@ private fun AddStopRow(enabled: Boolean, onAdd: (String, StopType) -> Unit) {
             keyboardActions = KeyboardActions(onDone = { submit() }),
             enabled = enabled,
         )
-        Spacer(Modifier.width(8.dp))
-        Button(onClick = submit, enabled = enabled && text.isNotBlank()) { Text("Add") }
+        Spacer(Modifier.width(6.dp))
+        // v0.9.0: empty box shows the mic (say several stops); typing swaps it for Add.
+        if (text.isBlank()) {
+            Button(
+                onClick = { onListen(pickup) },
+                enabled = enabled,
+                modifier = Modifier.heightIn(min = 52.dp),
+                contentPadding = PaddingValues(horizontal = 16.dp),
+            ) { Text("🎤", fontSize = 22.sp) }
+        } else {
+            Button(onClick = submit, enabled = enabled) { Text("Add") }
+        }
+    }
+}
+
+/**
+ * v0.9.0: the check list after saying several stops. Each row shows what Truckie found;
+ * tap it for the next match, ✎ to retype, ✕ to drop it. "Add all" appends them in spoken order.
+ */
+@Composable
+private fun VoiceCheckDialog(items: List<VoiceItem>, vm: MainViewModel, onMore: () -> Unit) {
+    val looking = items.any { it.looking }
+    val ready = items.count { it.place != null }
+    AlertDialog(
+        onDismissRequest = {},
+        title = { Text(if (looking) "Finding ${items.size} stops…" else "Add these ${items.size} stops?") },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                if (items.isEmpty()) Text("Nothing left. Tap 🎤 Add more, or Cancel.")
+                items.forEachIndexed { i, item -> VoiceRow(i + 1, item, vm) }
+            }
+        },
+        confirmButton = {
+            Button(onClick = vm::voiceAddAll, enabled = !looking && ready > 0) { Text("Add all ($ready)") }
+        },
+        dismissButton = {
+            Row {
+                TextButton(onClick = vm::voiceCancel) { Text("Cancel") }
+                TextButton(onClick = onMore) { Text("🎤 Add more") }
+            }
+        },
+    )
+}
+
+@Composable
+private fun VoiceRow(number: Int, item: VoiceItem, vm: MainViewModel) {
+    var editing by remember(item.id) { mutableStateOf(false) }
+    var text by remember(item.id) { mutableStateOf(item.heard) }
+    Column(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("$number.", Modifier.width(28.dp), fontWeight = FontWeight.Bold)
+            Column(
+                Modifier.weight(1f).clickable(enabled = item.matches.size > 1) { vm.voiceNextMatch(item.id) },
+            ) {
+                val place = item.place
+                when {
+                    item.looking -> Text("Looking up…", style = MaterialTheme.typography.bodyMedium)
+                    place != null -> Text(place.label, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    else -> Text(item.error ?: "Not found. Tap ✎ to fix it.", color = MaterialTheme.colorScheme.error)
+                }
+                val more = if (item.matches.size > 1) " · match ${item.pick + 1} of ${item.matches.size}, tap for next" else ""
+                Text("Heard: \"${item.heard}\"$more", style = MaterialTheme.typography.bodySmall)
+            }
+            FilterChip(
+                selected = item.type == StopType.PICKUP,
+                onClick = { vm.voiceToggleType(item.id) },
+                label = { Text("Pickup", fontSize = 12.sp) },
+            )
+            TextButton(onClick = { editing = !editing }, contentPadding = PaddingValues(4.dp)) { Text("✎") }
+            TextButton(onClick = { vm.voiceRemove(item.id) }, contentPadding = PaddingValues(4.dp)) { Text("✕") }
+        }
+        if (editing) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { text = it },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(onSearch = { vm.voiceRetype(item.id, text); editing = false }),
+                )
+                TextButton(onClick = { vm.voiceRetype(item.id, text); editing = false }) { Text("Find") }
+            }
+        }
+        HorizontalDivider(Modifier.padding(top = 6.dp))
     }
 }
 

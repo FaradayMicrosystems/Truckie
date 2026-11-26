@@ -15,12 +15,28 @@ import app.truckie.core.Release
 import app.truckie.core.RouteOptimizer
 import app.truckie.core.StopList
 import app.truckie.core.StopType
+import app.truckie.core.VoiceStops
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+
+/** One stop from a voice list (v0.9.0), shown on the check list before it is added. */
+data class VoiceItem(
+    val id: Int,
+    val heard: String,
+    val type: StopType,
+    /** Places found for [heard]; [pick] is the one that gets added. */
+    val matches: List<Place> = emptyList(),
+    val pick: Int = 0,
+    val looking: Boolean = true,
+    /** Set when the lookup itself failed (no signal), not when it found nothing. */
+    val error: String? = null,
+) {
+    val place: Place? get() = matches.getOrNull(pick)
+}
 
 data class UiState(
     val stops: StopList = StopList(),
@@ -34,6 +50,8 @@ data class UiState(
     /** Several matches for a typed address: the driver picks one. */
     val choices: List<Place> = emptyList(),
     val choiceType: StopType = StopType.DELIVERY,
+    /** Voice list check list (v0.9.0); null when it isn't showing. */
+    val voice: List<VoiceItem>? = null,
     /** True right after "Delivery completed?": shows "Navigate to next stop?" with the countdown. */
     val askNavigateNext: Boolean = false,
     val update: Release? = null,
@@ -124,6 +142,69 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun dismissChoices() = _state.update { it.copy(choices = emptyList()) }
+
+    // --- Adding several stops by voice (v0.9.0) ---
+
+    private var voiceIds = 0
+
+    /**
+     * What voice typing heard: split into stops (on "next", "then"…), shown on the check list,
+     * and looked up one after another in the order spoken. Adds to a list already showing ("Add more").
+     */
+    fun voiceHeard(transcript: String, allPickups: Boolean) {
+        val spoken = VoiceStops.split(transcript)
+        if (spoken.isEmpty()) {
+            _state.update { it.copy(note = "Didn't catch an address in \"${transcript.trim()}\". Say \"next\" between stops.") }
+            return
+        }
+        val items = spoken.map { VoiceItem(++voiceIds, it.text, if (allPickups) StopType.PICKUP else it.type) }
+        _state.update { it.copy(voice = it.voice.orEmpty() + items, note = null) }
+        viewModelScope.launch { items.forEach { lookUp(it.id, it.heard) } }
+    }
+
+    private suspend fun lookUp(id: Int, text: String) {
+        val found = runCatching { places.search(text, places.here()) }
+        updateVoice(id) {
+            it.copy(
+                heard = text, looking = false, pick = 0,
+                matches = found.getOrDefault(emptyList()),
+                error = found.exceptionOrNull()?.let { e -> "Couldn't look up (${e.message ?: "no signal"})" },
+            )
+        }
+    }
+
+    private fun updateVoice(id: Int, f: (VoiceItem) -> VoiceItem) =
+        _state.update { s -> s.copy(voice = s.voice?.map { if (it.id == id) f(it) else it }) }
+
+    /** Tap a row: use its next match. */
+    fun voiceNextMatch(id: Int) = updateVoice(id) { if (it.matches.size > 1) it.copy(pick = (it.pick + 1) % it.matches.size) else it }
+    fun voiceToggleType(id: Int) = updateVoice(id) { it.copy(type = if (it.type == StopType.PICKUP) StopType.DELIVERY else StopType.PICKUP) }
+    fun voiceRemove(id: Int) = _state.update { s -> s.copy(voice = s.voice?.filterNot { it.id == id }) }
+
+    /** Fix a misheard stop by typing, then look it up again. */
+    fun voiceRetype(id: Int, text: String) {
+        if (text.isBlank()) return
+        updateVoice(id) { it.copy(heard = text.trim(), looking = true, error = null, matches = emptyList()) }
+        viewModelScope.launch { lookUp(id, text.trim()) }
+    }
+
+    fun voiceCancel() = _state.update { it.copy(voice = null) }
+
+    /** "Add all": every found stop goes on the end, in the order spoken. */
+    fun voiceAddAll() {
+        val items = _state.value.voice ?: return
+        val ready = items.filter { it.place != null }
+        change { l -> ready.fold(l) { acc, v -> acc.add(v.place!!.label, v.place!!.location, v.type) } }
+        val missed = items.filter { it.place == null }.map { it.heard }
+        val note = buildString {
+            append("Added ${ready.size} stop${if (ready.size == 1) "" else "s"} to the end, in the order you said them.")
+            if (missed.isNotEmpty()) append(" Not found, so not added: ${missed.joinToString("; ")}.")
+        }
+        _state.update { it.copy(voice = null, note = note) }
+    }
+
+    /** Voice typing isn't on this phone, or it gave up. */
+    fun voiceUnavailable(why: String) = _state.update { it.copy(note = why) }
 
     // --- The driving loop ---
 

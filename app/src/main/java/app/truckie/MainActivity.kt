@@ -1,11 +1,13 @@
 package app.truckie
 
 import android.Manifest
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.speech.RecognizerIntent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -19,6 +21,30 @@ class MainActivity : ComponentActivity() {
     // Once location is allowed, auto-complete (if turned on) can start watching.
     private val askPermissions = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
         ArrivalService.startIfWanted(this)
+    }
+
+    // v0.9.0: say several stops in one go. The phone's own voice typing (Google's on most phones)
+    // does the listening, so Truckie needs no microphone permission and no API key.
+    private var voicePickups = false
+    private val voice = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { r ->
+        val heard = r.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
+        if (r.resultCode == RESULT_OK && !heard.isNullOrBlank()) vm.voiceHeard(heard, voicePickups)
+    }
+
+    private fun listen(pickups: Boolean) {
+        voicePickups = pickups
+        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+            .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            .putExtra(RecognizerIntent.EXTRA_PROMPT, "Say your stops, with \"next\" between them")
+            // Room to breathe between addresses (some phones ignore these).
+            .putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 3000L)
+            .putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 3000L)
+            .putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
+        try {
+            voice.launch(intent)
+        } catch (_: ActivityNotFoundException) {
+            vm.voiceUnavailable("No voice typing on this phone. Install or turn on the Google app, then tap 🎤 again.")
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -42,6 +68,7 @@ class MainActivity : ComponentActivity() {
                     allowOpenMaps = {
                         startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")))
                     },
+                    listen = ::listen,
                 )
             }
         }

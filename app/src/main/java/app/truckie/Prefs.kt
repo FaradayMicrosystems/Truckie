@@ -41,4 +41,9 @@ class Prefs(context: Context) {
     var splitScreenAdjacent: Boolean
         get() = sp.getBoolean("splitScreenAdjacent", true)
         set(v) = sp.edit().putBoolean("splitScreenAdjacent", v).apply()
+
+    /** v0.10.0: show the voice check list before adding. Off: each spoken stop is added straight away. */
+    var voiceCheckList: Boolean
+        get() = sp.getBoolean("voiceCheckList", false)
+        set(v) = sp.edit().putBoolean("voiceCheckList", v).apply()
 }

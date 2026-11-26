@@ -14,6 +14,7 @@ import app.truckie.core.Planner
 import app.truckie.core.Release
 import app.truckie.core.RouteOptimizer
 import app.truckie.core.StopList
+import app.truckie.core.SpokenStop
 import app.truckie.core.StopType
 import app.truckie.core.VoiceStops
 import kotlinx.coroutines.Dispatchers
@@ -21,6 +22,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 /** One stop from a voice list (v0.9.0), shown on the check list before it is added. */
@@ -52,6 +55,8 @@ data class UiState(
     val choiceType: StopType = StopType.DELIVERY,
     /** Voice list check list (v0.9.0); null when it isn't showing. */
     val voice: List<VoiceItem>? = null,
+    /** v0.10.0: show the check list (⋮), or add each spoken stop straight away (default). */
+    val voiceCheckList: Boolean = false,
     /** True right after "Delivery completed?": shows "Navigate to next stop?" with the countdown. */
     val askNavigateNext: Boolean = false,
     val update: Release? = null,
@@ -77,6 +82,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             stops = repo.stops.value, navApp = prefs.navApp, optimizeBy = prefs.optimizeBy,
             autoComplete = prefs.autoComplete, arrivalRadiusM = prefs.arrivalRadiusM, arrivalDwellSeconds = prefs.arrivalDwellSeconds,
             canOpenMaps = ArrivalService.canOpenNavigationFromBackground(app),
+            voiceCheckList = prefs.voiceCheckList,
         )
     )
     val state: StateFlow<UiState> = _state
@@ -148,18 +154,76 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private var voiceIds = 0
 
     /**
-     * What voice typing heard: split into stops (on "next", "then"…), shown on the check list,
-     * and looked up one after another in the order spoken. Adds to a list already showing ("Add more").
+     * What voice typing heard (v0.10.0). Returns true to open the mic again (keep listening),
+     * false when the driver said "done" / "stop" or the check list is showing.
+     *
+     * Hands-free (default): each stop is looked up and added to the end straight away. Lookups run
+     * one at a time behind [voiceQueue], so stops land in the order spoken even while the mic is open.
+     * Check list (⋮ option): split into stops and shown for checking first, as in v0.9.0.
      */
-    fun voiceHeard(transcript: String, allPickups: Boolean) {
-        val spoken = VoiceStops.split(transcript)
-        if (spoken.isEmpty()) {
-            _state.update { it.copy(note = "Didn't catch an address in \"${transcript.trim()}\". Say \"next\" between stops.") }
-            return
+    fun voiceHeard(transcript: String, allPickups: Boolean): Boolean {
+        val heard = VoiceStops.hear(transcript)
+        val spoken = heard.stops.map { if (allPickups) it.copy(type = StopType.PICKUP) else it }
+        if (_state.value.voiceCheckList) {
+            if (spoken.isEmpty()) {
+                if (!heard.finished) _state.update { it.copy(note = "Didn't catch an address in \"${transcript.trim()}\". Say \"next\" between stops.") }
+                return false
+            }
+            val items = spoken.map { VoiceItem(++voiceIds, it.text, it.type) }
+            _state.update { it.copy(voice = it.voice.orEmpty() + items, note = null) }
+            viewModelScope.launch { items.forEach { lookUp(it.id, it.heard) } }
+            return false
         }
-        val items = spoken.map { VoiceItem(++voiceIds, it.text, if (allPickups) StopType.PICKUP else it.type) }
-        _state.update { it.copy(voice = it.voice.orEmpty() + items, note = null) }
-        viewModelScope.launch { items.forEach { lookUp(it.id, it.heard) } }
+        val session = voiceSession
+        spoken.forEach { stop ->
+            session.queued++
+            viewModelScope.launch { voiceQueue.withLock { autoAdd(stop, session) } }
+        }
+        if (spoken.isEmpty() && !heard.finished) {
+            _state.update { it.copy(note = "Didn't catch an address in \"${transcript.trim()}\". Say it again, or \"done\" to finish.") }
+        }
+        if (heard.finished) voiceFinished()
+        return !heard.finished
+    }
+
+    /** Hands-free voice: counts for the note when the driver finishes. */
+    private class VoiceSession { var queued = 0; var added = 0; val missed = mutableListOf<String>() }
+    private var voiceSession = VoiceSession()
+    private val voiceQueue = Mutex()
+
+    private suspend fun autoAdd(stop: SpokenStop, session: VoiceSession) {
+        val found = runCatching { places.search(stop.text, places.here()) }.getOrDefault(emptyList())
+        val place = found.firstOrNull()
+        if (place != null) {
+            change { it.add(place.label, place.location, stop.type) }
+            session.added++
+        } else {
+            session.missed += stop.text
+        }
+        _state.update { it.copy(note = voiceNote(session, done = false) + if (place != null) " Last: ${place.label}" else " Couldn't find \"${stop.text}\".") }
+    }
+
+    private fun voiceNote(s: VoiceSession, done: Boolean): String = buildString {
+        append(if (done) "Voice: added ${s.added} stop${if (s.added == 1) "" else "s"} in the order you said them." else "🎤 Added ${s.added}.")
+        if (done && s.missed.isNotEmpty()) append(" Not found, type these in: ${s.missed.joinToString("; ")}.")
+    }
+
+    /** "done", or the mic was closed: say what got added once every lookup has finished. */
+    fun voiceFinished() {
+        val session = voiceSession
+        voiceSession = VoiceSession()
+        if (session.queued == 0) return
+        viewModelScope.launch { voiceQueue.withLock { _state.update { it.copy(note = voiceNote(session, done = true)) } } }
+    }
+
+    fun setVoiceCheckList(on: Boolean) {
+        prefs.voiceCheckList = on
+        _state.update {
+            it.copy(
+                voiceCheckList = on,
+                note = if (on) "Voice: Truckie shows a check list before adding." else "Voice: each stop you say is added straight away; say \"done\" to finish.",
+            )
+        }
     }
 
     private suspend fun lookUp(id: Int, text: String) {

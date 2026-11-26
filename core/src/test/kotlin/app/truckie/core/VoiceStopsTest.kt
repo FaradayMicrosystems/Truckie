@@ -51,4 +51,16 @@ class VoiceStopsTest {
         assertEquals(emptyList(), texts("next then"))
         assertEquals(emptyList(), texts(""))
     }
+
+    @Test fun finishWordsEndTheSession() {
+        assertEquals(VoiceStops.Heard(emptyList(), true), VoiceStops.hear("Done."))
+        assertEquals(VoiceStops.Heard(emptyList(), true), VoiceStops.hear("stop"))
+        assertEquals(VoiceStops.Heard(emptyList(), true), VoiceStops.hear("That's it"))
+        val last = VoiceStops.hear("12 Smith St Newtown, that's it")
+        assertEquals(listOf("12 Smith St Newtown"), last.stops.map { it.text })
+        assertEquals(true, last.finished)
+        val more = VoiceStops.hear("2 Truck Stop Lane")
+        assertEquals(listOf("2 Truck Stop Lane"), more.stops.map { it.text })
+        assertEquals(false, more.finished)
+    }
 }

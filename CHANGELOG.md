@@ -5,6 +5,14 @@ fixes and looks (colours, design, logo). Experimental builds carry the letter e 
 stable releases carry none. Stable releases come from `main`. Work in progress lands on `experimental`
 first as `vX.Y.Ze+<build>` and is listed below as "unreleased" until Aurora calls a full release.
 
+## v0.11.0 — unreleased (experimental)
+
+- **Split screen from full screen.** Phones ignore "open in the other half" while Truckie is full screen,
+  so Maps still covered it. New optional helper: **⋮ > Start split screen from full screen** opens
+  Android's Accessibility settings; turn on **Truckie split screen**. Then Navigate on a full-screen
+  Truckie presses Android's split-screen button for you and opens Maps or Waze in the other half.
+  The helper reads nothing on screen. If the phone refuses, Maps opens the old way, so Navigate still works.
+
 ## v0.10.0 — unreleased (experimental)
 
 - **Hands-free voice stops.** Tap **🎤** once, then just keep talking: each stop you say is looked up

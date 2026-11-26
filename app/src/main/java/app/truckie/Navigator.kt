@@ -5,6 +5,8 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Handler
+import android.os.Looper
 import android.widget.Toast
 import app.truckie.core.NavApp
 import app.truckie.core.Stop
@@ -33,7 +35,29 @@ object Navigator {
     fun sideBySide(context: Context, intent: Intent): Intent =
         if (keepSideBySide(context)) intent.addFlags(Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT) else intent
 
+    /** How long Android takes to settle into split screen before Maps is opened in the other half. */
+    private const val SPLIT_SETTLE_MS = 900L
+
     fun navigate(context: Context, app: NavApp, stop: Stop) {
+        // v0.11.0: Truckie is full screen, so the phone would ignore "other half". The helper presses the split-screen
+        // action first, then Maps opens beside Truckie. If anything fails, Maps still opens (never break Navigate).
+        val activity = context as? Activity
+        if (activity != null && !activity.isInMultiWindowMode && Prefs(context).splitScreenAdjacent && SplitScreenHelper.enterSplitScreen()) {
+            val appContext = context.applicationContext
+            Handler(Looper.getMainLooper()).postDelayed({
+                val target = activity.takeUnless { it.isFinishing || it.isDestroyed } ?: appContext
+                try {
+                    target.startActivity(intent(app, stop).addFlags(Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT))
+                } catch (_: RuntimeException) {
+                    openPlain(appContext, app, stop)
+                }
+            }, SPLIT_SETTLE_MS)
+            return
+        }
+        openPlain(context, app, stop)
+    }
+
+    private fun openPlain(context: Context, app: NavApp, stop: Stop) {
         val direct = sideBySide(context, intent(app, stop))
         try {
             context.startActivity(direct)

@@ -1,3 +1,6 @@
 <resources>
     <string name="app_name">Truckie</string>
+    <string name="split_helper_label">Truckie split screen</string>
+    <string name="split_helper_summary">Lets Truckie put itself into split screen when you tap Navigate, so Maps or Waze opens in the other half.</string>
+    <string name="split_helper_description">When you tap Navigate while Truckie is full screen, this presses Android\'s split-screen button for you, then opens Maps or Waze in the other half so Truckie stays on screen. It does not read or collect anything on your screen.</string>
 </resources>

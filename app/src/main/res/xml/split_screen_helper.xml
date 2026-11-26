@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- v0.11.0: Truckie's split-screen helper. Reads no screen content; only presses the system split-screen action. -->
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes="typeAnnouncement"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:canRetrieveWindowContent="false"
+    android:isAccessibilityTool="false"
+    android:notificationTimeout="1000"
+    android:description="@string/split_helper_description"
+    android:summary="@string/split_helper_summary" />

@@ -174,6 +174,17 @@ fun TruckieScreen(
                                 text = { Text((if (sideBySide) "☑ " else "☐ ") + "Split screen: Maps in other half") },
                                 onClick = { sideBySide = !sideBySide; prefs.splitScreenAdjacent = sideBySide; menuOpen = false },
                             )
+                            if (sideBySide) {
+                                // v0.11.0: lets Truckie start split screen itself when it is full screen.
+                                DropdownMenuItem(
+                                    text = { Text((if (SplitScreenHelper.isOn) "    ☑ " else "    ☐ ") + "Start split screen from full screen") },
+                                    onClick = {
+                                        menuOpen = false
+                                        android.widget.Toast.makeText(context, "Tap \"Truckie split screen\" and turn it on" + if (SplitScreenHelper.isOn) " (it's on; turn off here)" else "", android.widget.Toast.LENGTH_LONG).show()
+                                        runCatching { context.startActivity(android.content.Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS)) }
+                                    },
+                                )
+                            }
                             DropdownMenuItem(
                                 text = { Text((if (state.voiceCheckList) "☑ " else "☐ ") + "Voice: check list before adding") },
                                 onClick = { vm.setVoiceCheckList(!state.voiceCheckList); menuOpen = false },

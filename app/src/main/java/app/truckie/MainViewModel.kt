@@ -57,6 +57,9 @@ data class UiState(
     val voice: List<VoiceItem>? = null,
     /** v0.10.0: show the check list (⋮), or add each spoken stop straight away (default). */
     val voiceCheckList: Boolean = false,
+    /** v0.12.0: the in-app mic is on (shows the listening card), and what it's hearing right now. */
+    val voiceListening: Boolean = false,
+    val voicePartial: String = "",
     /** True right after "Delivery completed?": shows "Navigate to next stop?" with the countdown. */
     val askNavigateNext: Boolean = false,
     val update: Release? = null,
@@ -266,6 +269,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
         _state.update { it.copy(voice = null, note = note) }
     }
+
+    fun voiceListening(on: Boolean) = _state.update { it.copy(voiceListening = on, voicePartial = "") }
+    fun voicePartial(words: String) = _state.update { it.copy(voicePartial = words) }
 
     /** Voice typing isn't on this phone, or it gave up. */
     fun voiceUnavailable(why: String) = _state.update { it.copy(note = why) }

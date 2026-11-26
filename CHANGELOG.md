@@ -5,6 +5,19 @@ fixes and looks (colours, design, logo). Experimental builds carry the letter e 
 stable releases carry none. Stable releases come from `main`. Work in progress lands on `experimental`
 first as `vX.Y.Ze+<build>` and is listed below as "unreleased" until Aurora calls a full release.
 
+## v0.12.0 — unreleased (experimental)
+
+- **Voice waits for you.** Truckie now listens itself instead of opening the phone's voice pop-up, which
+  gave up after a second or two of quiet. A pause, a cough or a "didn't catch that" just opens the mic
+  again, so it keeps listening until you say **"done"** (or "stop", "that's it"), tap **Stop** on the
+  new listening card, leave Truckie, or say nothing for 5 minutes. Each stop also gets up to 6 seconds of
+  quiet before it counts as finished. First time, Truckie asks for the microphone; say no and you get
+  the old pop-up. The check-list mode still uses the pop-up.
+- **Say "pick up" or "delivery" to tag stops.** "Pick up", "pickup", "pick-up", "picked up" and
+  "delivery", "deliver (to)", "drop off" now start a new stop as well as tag it, so *"pick up 258 Leitchs
+  Road Brendale delivery 207 Todds Road Lawnton"* is two stops: a pickup, then a delivery. "Next" and
+  "then" still work too; a stop with no tag word is a delivery.
+
 ## v0.11.0 — unreleased (experimental)
 
 - **Split screen from full screen.** Phones ignore "open in the other half" while Truckie is full screen,

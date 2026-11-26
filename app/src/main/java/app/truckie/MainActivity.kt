@@ -5,6 +5,7 @@ import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.provider.Settings
 import android.speech.RecognizerIntent
@@ -31,13 +32,43 @@ class MainActivity : ComponentActivity() {
     private val voice = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { r ->
         val heard = r.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
         if (r.resultCode == RESULT_OK && !heard.isNullOrBlank()) {
-            if (vm.voiceHeard(heard, voicePickups)) listen(voicePickups)
+            if (vm.voiceHeard(heard, voicePickups)) popUp(voicePickups)
         } else {
             vm.voiceFinished()
         }
     }
 
+    // v0.12.0: listen in-app so a pause doesn't end the session (see VoiceListener). The old
+    // pop-up stays as the fallback when the microphone isn't allowed or there's no speech service.
+    private val inApp by lazy {
+        VoiceListener(
+            this,
+            onHeard = { vm.voiceHeard(it, voicePickups) },
+            onPartial = vm::voicePartial,
+            onEnded = { why -> vm.voiceListening(false); vm.voiceFinished(); why?.let(vm::voiceUnavailable) },
+        )
+    }
+    private val askMic = registerForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
+        if (ok) startInApp() else popUp(voicePickups)
+    }
+
     private fun listen(pickups: Boolean) {
+        voicePickups = pickups
+        when {
+            vm.state.value.voiceCheckList || !VoiceListener.available(this) -> popUp(pickups)
+            checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED -> startInApp()
+            else -> askMic.launch(Manifest.permission.RECORD_AUDIO)
+        }
+    }
+
+    private fun startInApp() {
+        vm.voiceListening(true)
+        inApp.start()
+    }
+
+    private fun stopListening() = inApp.stop()
+
+    private fun popUp(pickups: Boolean) {
         voicePickups = pickups
         val prompt = if (vm.state.value.voiceCheckList) "Say your stops, with \"next\" between them"
             else "Say a stop (or a few, with \"next\"). Say \"done\" to finish"
@@ -45,8 +76,8 @@ class MainActivity : ComponentActivity() {
             .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             .putExtra(RecognizerIntent.EXTRA_PROMPT, prompt)
             // Room to breathe between addresses (some phones ignore these).
-            .putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 3000L)
-            .putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 3000L)
+            .putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, VoiceListener.SILENCE_MS)
+            .putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, VoiceListener.SILENCE_MS)
             .putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
         try {
             voice.launch(intent)
@@ -78,6 +109,7 @@ class MainActivity : ComponentActivity() {
                         startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")))
                     },
                     listen = ::listen,
+                    stopListening = ::stopListening,
                 )
             }
         }
@@ -92,6 +124,8 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onStop() {
+        // Android cuts the mic off in the background anyway; end the session cleanly.
+        if (inApp.isRunning) inApp.stop()
         Arrivals.inMultiWindow = isInMultiWindowMode
         Arrivals.phoneVisible = false
         super.onStop()

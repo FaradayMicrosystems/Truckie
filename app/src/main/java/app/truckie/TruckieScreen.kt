@@ -112,6 +112,8 @@ fun TruckieScreen(
     allowOpenMaps: () -> Unit,
     /** Starts voice typing for several stops; true when the Pickup chip is on. */
     listen: (Boolean) -> Unit,
+    /** v0.12.0: turns the in-app mic off. */
+    stopListening: () -> Unit = {},
 ) {
     var menuOpen by remember { mutableStateOf(false) }
     var confirmClear by remember { mutableStateOf(false) }
@@ -259,6 +261,7 @@ fun TruckieScreen(
                 state.note?.let { note ->
                     item(key = "note") { Text(note, Modifier.padding(horizontal = 16.dp, vertical = 4.dp), style = MaterialTheme.typography.bodyMedium) }
                 }
+                if (state.voiceListening) item(key = "listening") { ListeningCard(state.voicePartial, onStop = stopListening) }
                 item(key = "add-row") { AddStopRow(enabled = state.busy == null, onAdd = vm::addStop, onListen = listen) }
                 val open = state.stops.open
                 item(key = "todo-header") {
@@ -438,6 +441,28 @@ private fun PillButton(label: String, colour: Color, modifier: Modifier = Modifi
         contentPadding = PaddingValues(horizontal = 14.dp),
     ) {
         Text(label, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+    }
+}
+
+/** v0.12.0: shows the mic is on and stays on; Stop turns it off. */
+@Composable
+private fun ListeningCard(partial: String, onStop: () -> Unit) {
+    Card(
+        Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+    ) {
+        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text("🎤 Listening… take your time", fontWeight = FontWeight.Bold)
+                Text(
+                    partial.ifBlank { "Say \"pick up …\" or \"delivery …\" before each address. Say \"done\" to finish." },
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 3,
+                )
+            }
+            Spacer(Modifier.width(8.dp))
+            Button(onClick = onStop) { Text("Stop") }
+        }
     }
 }
 

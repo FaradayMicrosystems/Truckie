@@ -63,4 +63,59 @@ class VoiceStopsTest {
         assertEquals(listOf("2 Truck Stop Lane"), more.stops.map { it.text })
         assertEquals(false, more.finished)
     }
+
+    private fun tagged(s: String) = VoiceStops.split(s).map { it.type to it.text }
+
+    @Test fun pickupAndDeliveryWordsSplitAndTag() {
+        assertEquals(
+            listOf(StopType.PICKUP to "258 Leitchs Road Brendale", StopType.DELIVERY to "207 Todds Road Lawnton"),
+            tagged("pick up 258 Leitchs Road Brendale delivery 207 Todds Road Lawnton"),
+        )
+        assertEquals(
+            listOf(StopType.PICKUP to "258 Leitchs Road, Brendale", StopType.DELIVERY to "207 Todds Road, Lawnton"),
+            tagged("Pick up 258 Leitchs Road, Brendale, deliver 207 Todds Road, Lawnton"),
+        )
+        assertEquals(
+            listOf(StopType.PICKUP to "258 Leitchs Road Brendale", StopType.DELIVERY to "207 Todds Road Lawnton"),
+            tagged("Pick-up 258 Leitchs Road Brendale and deliver to 207 Todds Road Lawnton"),
+        )
+    }
+
+    @Test fun speechRecognizerVariants() {
+        assertEquals(
+            listOf(
+                StopType.PICKUP to "1 A St",
+                StopType.DELIVERY to "2 B St",
+                StopType.PICKUP to "3 C St",
+                StopType.DELIVERY to "4 D St",
+                StopType.PICKUP to "5 E St",
+                StopType.DELIVERY to "6 F St",
+            ),
+            tagged("pickup 1 A St drop off 2 B St picked up 3 C St a delivery to 4 D St Pickup from 5 E St drop-off at 6 F St"),
+        )
+    }
+
+    @Test fun tagWordsMixWithNext() {
+        assertEquals(
+            listOf(StopType.PICKUP to "5 Depot Rd", StopType.DELIVERY to "9 Main St", StopType.DELIVERY to "12 King St"),
+            tagged("pick up 5 Depot Rd next delivery 9 Main St then 12 King St"),
+        )
+    }
+
+    @Test fun untaggedStopThenTaggedOne() {
+        assertEquals(
+            listOf(StopType.DELIVERY to "10 Smith St Newtown", StopType.PICKUP to "4 Mill Rd"),
+            tagged("10 Smith St Newtown pickup 4 Mill Rd"),
+        )
+    }
+
+    @Test fun keepsBlockLetters() {
+        assertEquals(listOf("Block A", "2 B St"), texts("Block A delivery 2 B St"))
+    }
+
+    @Test fun hearWithTagsAndDone() {
+        val h = VoiceStops.hear("pick up 258 Leitchs Road Brendale delivery 207 Todds Road Lawnton, done")
+        assertEquals(listOf(StopType.PICKUP, StopType.DELIVERY), h.stops.map { it.type })
+        assertEquals(true, h.finished)
+    }
 }

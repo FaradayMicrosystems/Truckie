@@ -20,6 +20,21 @@ object VoiceStops {
     private val DELIVERY = Regex("""(?i)^(?:a\s+)?deliver(?:y|ing)?\b[\s,:]*(?:(?:to|at)\b)?\s*""")
     private val FILLER = Regex("""(?i)^(?:(?:first|okay|ok|um|uh|right|so|number one)\b[\s,:]*)+""")
 
+    /** v0.10.0: what one voice turn said: its stops, and whether the driver said they're finished. */
+    data class Heard(val stops: List<SpokenStop>, val finished: Boolean)
+
+    // "…12 Smith St, done" ends the session after adding. A bare "stop" only counts on its own
+    // (addresses like "Truck Stop Lane" end in it), so it isn't in the trailing list.
+    private val TRAILING_FINISH = Regex("""(?i)[\s,.]*\b(?:that[’']?s\s+it|that[’']?s\s+all|all\s+done|i[’']?m\s+done|done|finish(?:ed)?)[\s.!]*$""")
+    private val ONLY_FINISH = Regex("""(?i)^\W*(?:stop|end|cancel|done|finish(?:ed)?|that[’']?s\s+it|that[’']?s\s+all|all\s+done|i[’']?m\s+done)\W*$""")
+
+    fun hear(transcript: String): Heard {
+        if (ONLY_FINISH.matches(transcript)) return Heard(emptyList(), finished = true)
+        val finished = TRAILING_FINISH.containsMatchIn(transcript)
+        val rest = if (finished) TRAILING_FINISH.replace(transcript, "") else transcript
+        return Heard(split(rest), finished)
+    }
+
     fun split(transcript: String): List<SpokenStop> =
         transcript.split(SPLIT).mapNotNull { part ->
             var t = part.trim().trim(',', ' ')
@@ -28,7 +43,7 @@ object VoiceStops {
             t = PICKUP.replace(t, "")
             t = DELIVERY.replace(t, "").trim().trim(',', ' ')
             // A lone word ("okay", "done") is not an address.
-            if (t.length < 3 || t.equals("done", ignoreCase = true) || t.equals("that's it", ignoreCase = true)) null
+            if (t.length < 3 || ONLY_FINISH.matches(t)) null
             else SpokenStop(t, type)
         }
 }

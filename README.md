@@ -9,8 +9,9 @@ around Waze's stop limit.
 
 - **Add stops** by typing an address, `lat,lng`, or pasting a Google Maps link. New stops always
   go on the **end** of the list, in the order you add them. Tick **Pickup** for a pickup.
-- **Say several stops at once (v0.9.0e):** tap **🎤**, say the addresses with "next" between them,
-  check the list, tap **Add all**. They're added in the order spoken.
+- **Say your stops (v0.10.0e):** tap **🎤** once and keep talking. Each stop is added as you say it
+  and the mic reopens by itself; say "done" to finish. ⋮ > "Voice: check list before adding" brings
+  back the check list.
 - **Hold and drag:** hold a stop for 500 ms until it lifts, drag it to a new place, let go.
   Everything in between shifts by one, so the list stays in sequence.
 - **Optimize** (top bar) chains the stops still to do by road: nearest to you first, then the

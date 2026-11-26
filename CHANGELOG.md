@@ -5,6 +5,15 @@ fixes and looks (colours, design, logo). Experimental builds carry the letter e 
 stable releases carry none. Stable releases come from `main`. Work in progress lands on `experimental`
 first as `vX.Y.Ze+<build>` and is listed below as "unreleased" until Aurora calls a full release.
 
+## v0.10.0 — unreleased (experimental)
+
+- **Hands-free voice stops.** Tap **🎤** once, then just keep talking: each stop you say is looked up
+  and added to the end straight away (best match), and the mic opens again by itself. Say a few at once
+  with "next" between them if you like. Say **"done"** (or "stop", "that's it"), or close the mic, to
+  finish; you can also end with *"…12 Smith St, done"*. Truckie then says how many it added and names
+  any it couldn't find, so you can type those in. Stops land in the order you said them, even while
+  lookups catch up. Want the v0.9 check list back? **⋮ > Voice: check list before adding**.
+
 ## v0.9.0 — unreleased (experimental)
 
 - **Add several stops by voice.** With the add box empty, tap **🎤** and say your stops in one go with

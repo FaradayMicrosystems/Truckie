@@ -174,6 +174,10 @@ fun TruckieScreen(
                                 text = { Text((if (sideBySide) "☑ " else "☐ ") + "Split screen: Maps in other half") },
                                 onClick = { sideBySide = !sideBySide; prefs.splitScreenAdjacent = sideBySide; menuOpen = false },
                             )
+                            DropdownMenuItem(
+                                text = { Text((if (state.voiceCheckList) "☑ " else "☐ ") + "Voice: check list before adding") },
+                                onClick = { vm.setVoiceCheckList(!state.voiceCheckList); menuOpen = false },
+                            )
                             HorizontalDivider()
                             DropdownMenuItem(
                                 text = { Text((if (state.autoComplete) "☑ " else "☐ ") + "Auto-complete on arrival") },

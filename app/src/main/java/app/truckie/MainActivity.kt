@@ -25,17 +25,25 @@ class MainActivity : ComponentActivity() {
 
     // v0.9.0: say several stops in one go. The phone's own voice typing (Google's on most phones)
     // does the listening, so Truckie needs no microphone permission and no API key.
+    // v0.10.0: hands-free. After each answer the mic opens again by itself, until the driver says
+    // "done" / "stop" or closes the mic (back, or tap outside it).
     private var voicePickups = false
     private val voice = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { r ->
         val heard = r.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
-        if (r.resultCode == RESULT_OK && !heard.isNullOrBlank()) vm.voiceHeard(heard, voicePickups)
+        if (r.resultCode == RESULT_OK && !heard.isNullOrBlank()) {
+            if (vm.voiceHeard(heard, voicePickups)) listen(voicePickups)
+        } else {
+            vm.voiceFinished()
+        }
     }
 
     private fun listen(pickups: Boolean) {
         voicePickups = pickups
+        val prompt = if (vm.state.value.voiceCheckList) "Say your stops, with \"next\" between them"
+            else "Say a stop (or a few, with \"next\"). Say \"done\" to finish"
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
             .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            .putExtra(RecognizerIntent.EXTRA_PROMPT, "Say your stops, with \"next\" between them")
+            .putExtra(RecognizerIntent.EXTRA_PROMPT, prompt)
             // Room to breathe between addresses (some phones ignore these).
             .putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 3000L)
             .putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 3000L)
@@ -43,6 +51,7 @@ class MainActivity : ComponentActivity() {
         try {
             voice.launch(intent)
         } catch (_: ActivityNotFoundException) {
+            vm.voiceFinished()
             vm.voiceUnavailable("No voice typing on this phone. Install or turn on the Google app, then tap 🎤 again.")
         }
     }

@@ -69,6 +69,20 @@
         </service>
 
         <!-- Auto-complete on arrival: watches GPS while you drive. -->
+        <!-- v0.11.0: optional split-screen helper (Settings > Accessibility > Truckie split screen). -->
+        <service
+            android:name=".SplitScreenHelper"
+            android:exported="false"
+            android:label="@string/split_helper_label"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/split_screen_helper" />
+        </service>
+
         <service
             android:name=".ArrivalService"
             android:exported="false"
